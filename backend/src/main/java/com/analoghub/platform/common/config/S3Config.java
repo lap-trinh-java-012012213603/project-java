@@ -1,5 +1,6 @@
 package com.analoghub.platform.common.config;
 
+<<<<<<< HEAD
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -71,3 +72,8 @@ public class S3Config {
         return builder.build();
     }
 }
+=======
+public class S3Config {
+    
+}
+>>>>>>> f764710a1bf036f55b692c38351864ccd306c790

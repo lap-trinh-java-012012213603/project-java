@@ -33,6 +33,7 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+<<<<<<< HEAD
     locations: classpath:db/migration
 
 analoghub:
@@ -43,3 +44,6 @@ analoghub:
     secret-key: ${S3_SECRET_KEY:password}
     bucket: ${S3_BUCKET:analoghub-media}
     path-style-access-enabled: true
+=======
+    locations: classpath:db/migration
+>>>>>>> f764710a1bf036f55b692c38351864ccd306c790

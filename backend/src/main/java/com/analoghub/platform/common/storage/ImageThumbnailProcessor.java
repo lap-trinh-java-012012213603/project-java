@@ -1,5 +1,6 @@
 package com.analoghub.platform.common.storage;
 
+<<<<<<< HEAD
 import com.analoghub.platform.common.dto.ImageProcessResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,4 +101,8 @@ public class ImageThumbnailProcessor {
 
         return rgbImage;
     }
+=======
+public class ImageThumbnailProcessor {
+    
+>>>>>>> f764710a1bf036f55b692c38351864ccd306c790
 }

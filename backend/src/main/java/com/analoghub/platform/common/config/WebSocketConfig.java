@@ -1,5 +1,6 @@
 package com.analoghub.platform.common.config;
 
+<<<<<<< HEAD
 import com.analoghub.platform.common.websocket.WebSocketTopicConstants;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -30,4 +31,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
+=======
+public class WebSocketConfig {
+    
+>>>>>>> f764710a1bf036f55b692c38351864ccd306c790
 }
