@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: analoghub
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  # Dùng Alpine để tải trực tiếp server MinIO từ trang chủ, tránh bị Docker Hub chặn
+  minio:
+    image: alpine:latest
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: >
+      /bin/sh -c "
+      apk add --no-cache curl;
+      curl -O https://dl.min.io/server/minio/release/linux-amd64/minio;
+      chmod +x minio;
+      MINIO_ROOT_USER=root MINIO_ROOT_PASSWORD=password ./minio server /data --console-address ':9001'
+      "
+
+  # Container phụ dùng Alpine để tải tool mc và tạo bucket
+  minio-setup:
+    image: alpine:latest
+    depends_on:
+      - minio
+    command: >
+      /bin/sh -c "
+      apk add --no-cache curl;
+      sleep 10;
+      curl -O https://dl.min.io/client/mc/release/linux-amd64/mc;
+      chmod +x mc;
+      ./mc alias set myminio http://minio:9000 root password;
+      ./mc mb myminio/analoghub-media || true;
+      exit 0;
+      "
