@@ -13,16 +13,16 @@ public class SecurityFilterChainConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // Tắt CSRF bảo vệ mặc định (thường tắt khi làm REST API gọi từ ReactJS)
+            // Tat CSRF cho REST API
             .csrf(csrf -> csrf.disable())
             
-            // Định tuyến quyền truy cập
+            // Dinh tuyen quyen truy cap
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/hello").permitAll() // Mở khóa hoàn toàn cho API này
-                .anyRequest().authenticated()              // Các đường dẫn khác vẫn khóa
+                .requestMatchers("/api/hello", "/api/v1/common/**", "/ws-analoghub/**").permitAll()
+                .anyRequest().authenticated()
             )
             
-            // Tắt hộp thoại đăng nhập Basic Auth và Form Login mặc định
+            // Tat login form va basic auth mac dinh
             .formLogin(form -> form.disable())
             .httpBasic(basic -> basic.disable());
 

@@ -29,6 +29,8 @@
 	<properties>
 		<java.version>21</java.version>
 		<aws.sdk.version>2.27.21</aws.sdk.version>
+		<zxing.version>3.5.3</zxing.version>
+		<twelvemonkeys.version>3.11.0</twelvemonkeys.version>
 	</properties>
 	<dependencies>
 		<!-- AWS SDK v2 for S3 / MinIO -->
@@ -36,6 +38,35 @@
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>s3</artifactId>
 			<version>${aws.sdk.version}</version>
+		</dependency>
+
+		<!-- ZXing for QR Code / Barcode -->
+		<dependency>
+			<groupId>com.google.zxing</groupId>
+			<artifactId>core</artifactId>
+			<version>${zxing.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.zxing</groupId>
+			<artifactId>javase</artifactId>
+			<version>${zxing.version}</version>
+		</dependency>
+
+		<!-- TwelveMonkeys ImageIO for TIFF, JPEG and WebP -->
+		<dependency>
+			<groupId>com.twelvemonkeys.imageio</groupId>
+			<artifactId>imageio-tiff</artifactId>
+			<version>${twelvemonkeys.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.twelvemonkeys.imageio</groupId>
+			<artifactId>imageio-jpeg</artifactId>
+			<version>${twelvemonkeys.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.twelvemonkeys.imageio</groupId>
+			<artifactId>imageio-webp</artifactId>
+			<version>${twelvemonkeys.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
