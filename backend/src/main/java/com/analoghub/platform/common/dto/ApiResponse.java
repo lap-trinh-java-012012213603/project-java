@@ -1,16 +1,23 @@
 package com.analoghub.platform.common.dto;
 
+import lombok.*;
+
 import java.time.Instant;
 
-public record ApiResponse<T>(
-        boolean success,
-        String code,
-        String message,
-        T data,
-        Instant timestamp
-) {
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class ApiResponse<T>{
+    private boolean success;
+    private String code;
+    private String message;
+    private T data;
+    private Instant timestamp;
+
     public static <T> ApiResponse<T> success(T data) {
-        return new ApiResponse<>(true, "SUCCESS", "Thanh cong", data, Instant.now());
+        return new ApiResponse<>(true, "SUCCESS", "Success", data, Instant.now());
     }
 
     public static <T> ApiResponse<T> success(String message, T data) {

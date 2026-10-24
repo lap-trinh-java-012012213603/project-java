@@ -1,38 +1,65 @@
 package com.analoghub.platform.common.config;
 
-<<<<<<< HEAD
-import com.analoghub.platform.common.websocket.WebSocketTopicConstants;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
+import java.util.Arrays;
+
+@Getter
+@Setter
 @Configuration
 @EnableWebSocketMessageBroker
+@ConfigurationProperties(prefix = "app.websocket")
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    @Override
-    public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker(
-                WebSocketTopicConstants.BROKER_TOPIC_PREFIX,
-                WebSocketTopicConstants.BROKER_QUEUE_PREFIX
-        );
-        registry.setApplicationDestinationPrefixes(WebSocketTopicConstants.APP_PREFIX);
-        registry.setUserDestinationPrefix(WebSocketTopicConstants.USER_DESTINATION_PREFIX);
-    }
+    private String endpoint;
+    private String allowedOrigins;
+    private String appDestinationPrefix;
+    private String brokerTopicPrefix;
+    private String brokerQueuePrefix;
+    private String userDestinationPrefix;
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint(WebSocketTopicConstants.WS_ENDPOINT)
-                .setAllowedOriginPatterns("*");
+        String[] origins = splitCsv(allowedOrigins);
 
-        registry.addEndpoint(WebSocketTopicConstants.WS_ENDPOINT)
-                .setAllowedOriginPatterns("*")
+        // 1. Kết nối WebSocket thuần (ws://localhost:8080/ws)
+        registry.addEndpoint(endpoint)
+                .setAllowedOriginPatterns(origins);
+
+        // 2. Kết nối kèm SockJS fallback (http://localhost:8080/ws)
+        registry.addEndpoint(endpoint)
+                .setAllowedOriginPatterns(origins)
                 .withSockJS();
     }
-=======
-public class WebSocketConfig {
-    
->>>>>>> f764710a1bf036f55b692c38351864ccd306c790
+
+    @Override
+    public void configureMessageBroker(MessageBrokerRegistry registry) {
+        // Kênh Server bắn xuống Client:
+        // - /topic/orders/{orderId} (Tiến độ tráng cuộn phim)
+        // - /user/{userId}/queue/notifications (Thông báo cá nhân / Chat Marketplace)
+        registry.enableSimpleBroker(brokerTopicPrefix, brokerQueuePrefix);
+
+        // Tiền tố khi Client gửi message lên Server (@MessageMapping)
+        registry.setApplicationDestinationPrefixes(appDestinationPrefix);
+
+        // Tiền tố dành riêng cho từng User
+        registry.setUserDestinationPrefix(userDestinationPrefix);
+    }
+
+    private String[] splitCsv(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return new String[0];
+        }
+        return Arrays.stream(raw.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toArray(String[]::new);
+    }
 }

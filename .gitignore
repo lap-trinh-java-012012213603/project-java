@@ -1,0 +1,92 @@
+# ===================================================================
+# 1. ENVIRONMENT & SECRETS (QUAN TRỌNG NHẤT - CHẶN LỘ GEMINI API KEY)
+# ===================================================================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+application-local.yml
+application-secret.yml
+
+# ===================================================================
+# 2. BACKEND (Maven / Spring Boot)
+# ===================================================================
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# ===================================================================
+# 3. LOGS, DUMPS & LOCAL STORAGE TEMP FILES
+# ===================================================================
+logs/
+*.log
+hs_err_pid*
+replay_pid*
+tmp/
+temp/
+uploads/
+minio_data/
+postgres_data/
+es_data/
+redis_data/
+
+# ===================================================================
+# 4. IDEs & EDITORS (IntelliJ, VSCode, Eclipse, NetBeans)
+# ===================================================================
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### STS / Eclipse ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+# ===================================================================
+# 5. FRONTEND (ReactJS / Vite) & PYTHON RBL BENCHMARK
+# ===================================================================
+node_modules/
+dist/
+.vite/
+.pnpm-store/
+*.tsbuildinfo
+
+.venv/
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# ===================================================================
+# 6. OPERATING SYSTEM FILES (Windows & macOS)
+# ===================================================================
+.DS_Store
+Thumbs.db
+Desktop.ini
