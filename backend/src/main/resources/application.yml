@@ -14,6 +14,15 @@ spring:
     virtual:
       enabled: ${VIRTUAL_THREADS_ENABLED}
 
+  modulith:
+    detection-strategy: ${MODULITH_DETECTION_STRATEGY:direct-sub-packages}
+    events:
+      republish-outstanding-events-on-restart: ${MODULITH_REPUBLISH_ON_RESTART:true}
+      completion-mode: ${MODULITH_COMPLETION_MODE:update}
+      staleness:
+        check-interval: ${MODULITH_STALENESS_CHECK_INTERVAL:1m}
+        published: ${MODULITH_STALENESS_PUBLISHED:30s}
+
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
     username: ${POSTGRES_USER}
@@ -77,6 +86,10 @@ springdoc:
     tags-sorter: alpha
 
 app:
+  outbox:
+    stale-threshold-seconds: ${OUTBOX_STALE_THRESHOLD_SECONDS:30}
+    max-retry-attempts: ${OUTBOX_MAX_RETRY_ATTEMPTS:5}
+
   websocket:
     endpoint: ${WS_ENDPOINT}
     allowed-origins: ${WS_ALLOWED_ORIGINS}
@@ -125,6 +138,8 @@ app:
     max-scan-original-bytes: ${STORAGE_MAX_SCAN_ORIGINAL_BYTES}
 
   ai:
+    default-provider: ${AI_DEFAULT_PROVIDER:GEMINI}
+    fallback-enabled: ${AI_FALLBACK_ENABLED:true}
     gemini:
       api-key: ${GEMINI_API_KEY}
       chat-model: ${GEMINI_CHAT_MODEL}
@@ -134,10 +149,20 @@ app:
       embedding-dimensions: ${GEMINI_EMBEDDING_DIMENSIONS}
       temperature: ${GEMINI_TEMPERATURE}
       max-output-tokens: ${GEMINI_MAX_OUTPUT_TOKENS}
+    openai:
+      api-key: ${OPENAI_API_KEY:your-openai-api-key}
+      base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+      chat-model: ${OPENAI_CHAT_MODEL:gpt-4o-mini}
+      pro-model: ${OPENAI_PRO_MODEL:gpt-4o}
+      vision-model: ${OPENAI_VISION_MODEL:gpt-4o-mini}
+      embedding-model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+      embedding-dimensions: ${OPENAI_EMBEDDING_DIMENSIONS:768}
+      temperature: ${OPENAI_TEMPERATURE:0.15}
+      max-output-tokens: ${OPENAI_MAX_OUTPUT_TOKENS:1024}
+      timeout-seconds: ${OPENAI_TIMEOUT_SECONDS:30}
     rate-limit:
       requests-per-minute: ${AI_RATE_LIMIT_PER_MINUTE}
       requests-per-day: ${AI_RATE_LIMIT_PER_DAY}
-
 
   vnpay:
     tmn-code: ${VNPAY_TMN_CODE}
