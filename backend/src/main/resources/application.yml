@@ -1,0 +1,146 @@
+server:
+  port: ${SERVER_PORT}
+
+spring:
+  application:
+    name: ${APP_NAME}
+
+  config:
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:../.env[.properties]
+
+  threads:
+    virtual:
+      enabled: ${VIRTUAL_THREADS_ENABLED}
+
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE}
+      minimum-idle: ${DB_POOL_MIN_IDLE}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS}
+
+  jpa:
+    open-in-view: false
+    show-sql: ${JPA_SHOW_SQL}
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO}
+    properties:
+      hibernate:
+        format_sql: ${JPA_FORMAT_SQL}
+        jdbc:
+          time_zone: ${JPA_TIMEZONE}
+
+  flyway:
+    enabled: ${FLYWAY_ENABLED}
+    baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE}
+    locations: ${FLYWAY_LOCATIONS}
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
+      timeout: ${REDIS_TIMEOUT}
+
+  elasticsearch:
+    uris: ${ES_URIS}
+    connection-timeout: ${ES_CONNECTION_TIMEOUT}
+    socket-timeout: ${ES_SOCKET_TIMEOUT}
+
+  servlet:
+    multipart:
+      max-file-size: ${MULTIPART_MAX_FILE_SIZE}
+      max-request-size: ${MULTIPART_MAX_REQUEST_SIZE}
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+
+springdoc:
+  api-docs:
+    path: ${SWAGGER_API_DOCS_PATH}
+  swagger-ui:
+    path: ${SWAGGER_UI_PATH}
+    operations-sorter: method
+    tags-sorter: alpha
+
+app:
+  websocket:
+    endpoint: ${WS_ENDPOINT}
+    allowed-origins: ${WS_ALLOWED_ORIGINS}
+    app-destination-prefix: ${WS_APP_DESTINATION_PREFIX}
+    broker-topic-prefix: ${WS_BROKER_TOPIC_PREFIX}
+    broker-queue-prefix: ${WS_BROKER_QUEUE_PREFIX}
+    user-destination-prefix: ${WS_USER_DESTINATION_PREFIX}
+
+  openapi:
+    title: ${OPENAPI_TITLE}
+    version: ${OPENAPI_VERSION}
+    description: ${OPENAPI_DESCRIPTION}
+    contact-name: ${OPENAPI_CONTACT_NAME}
+    contact-email: ${OPENAPI_CONTACT_EMAIL}
+
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
+    allowed-methods: ${CORS_ALLOWED_METHODS}
+    allowed-headers: ${CORS_ALLOWED_HEADERS}
+    exposed-headers: ${CORS_EXPOSED_HEADERS}
+    allow-credentials: ${CORS_ALLOW_CREDENTIALS}
+    max-age: ${CORS_MAX_AGE}
+
+  redis:
+    trusted-package: ${REDIS_TRUSTED_PACKAGE}
+    cache-ttl-minutes: ${REDIS_CACHE_TTL_MINUTES}
+
+  jwt:
+    secret: ${JWT_SECRET}
+    access-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS}
+    refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS}
+
+  storage:
+    endpoint: ${STORAGE_ENDPOINT}
+    region: ${STORAGE_REGION}
+    access-key: ${STORAGE_ACCESS_KEY}
+    secret-key: ${STORAGE_SECRET_KEY}
+    bucket-name: ${STORAGE_BUCKET_NAME}
+    public-base-url: ${STORAGE_PUBLIC_BASE_URL}
+    presign-put-expiration-minutes: ${STORAGE_PRESIGN_PUT_EXP_MINUTES}
+    presign-get-expiration-minutes: ${STORAGE_PRESIGN_GET_EXP_MINUTES}
+    max-avatar-bytes: ${STORAGE_MAX_AVATAR_BYTES}
+    max-public-media-bytes: ${STORAGE_MAX_PUBLIC_MEDIA_BYTES}
+    max-scan-thumb-bytes: ${STORAGE_MAX_SCAN_THUMB_BYTES}
+    max-scan-preview-bytes: ${STORAGE_MAX_SCAN_PREVIEW_BYTES}
+    max-scan-original-bytes: ${STORAGE_MAX_SCAN_ORIGINAL_BYTES}
+
+  ai:
+    gemini:
+      api-key: ${GEMINI_API_KEY}
+      chat-model: ${GEMINI_CHAT_MODEL}
+      pro-model: ${GEMINI_PRO_MODEL}
+      vision-model: ${GEMINI_VISION_MODEL}
+      embedding-model: ${GEMINI_EMBEDDING_MODEL}
+      embedding-dimensions: ${GEMINI_EMBEDDING_DIMENSIONS}
+      temperature: ${GEMINI_TEMPERATURE}
+      max-output-tokens: ${GEMINI_MAX_OUTPUT_TOKENS}
+    rate-limit:
+      requests-per-minute: ${AI_RATE_LIMIT_PER_MINUTE}
+      requests-per-day: ${AI_RATE_LIMIT_PER_DAY}
+
+
+  vnpay:
+    tmn-code: ${VNPAY_TMN_CODE}
+    hash-secret: ${VNPAY_HASH_SECRET}
+    pay-url: ${VNPAY_PAY_URL}
+    return-url: ${VNPAY_RETURN_URL}
