@@ -29,22 +29,10 @@
 		<google-genai.version>1.58.0</google-genai.version>
 		<bucket4j.version>8.20.0</bucket4j.version>
 		<thumbnailator.version>0.4.20</thumbnailator.version>
-		<spring-modulith.version>2.1.1</spring-modulith.version>
-		<archunit.version>1.5.1</archunit.version>
-		<shedlock.version>7.10.1</shedlock.version>
-		<zxing.version>3.5.3</zxing.version>
 	</properties>
 
 	<dependencyManagement>
 		<dependencies>
-			<!-- Đồng bộ version cho Spring Modulith (Modular Monolith + Transactional Outbox) -->
-			<dependency>
-				<groupId>org.springframework.modulith</groupId>
-				<artifactId>spring-modulith-bom</artifactId>
-				<version>${spring-modulith.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
 			<!-- Đồng bộ version cho toàn bộ module AWS SDK v2 (S3 client dùng cho R2/MinIO) -->
 			<dependency>
 				<groupId>software.amazon.awssdk</groupId>
@@ -79,16 +67,6 @@
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>${springdoc.version}</version>
-		</dependency>
-
-		<!-- ================= Modular Monolith & Transactional Outbox (Spring Modulith) ================= -->
-		<dependency>
-			<groupId>org.springframework.modulith</groupId>
-			<artifactId>spring-modulith-starter-core</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.modulith</groupId>
-			<artifactId>spring-modulith-starter-jpa</artifactId>
 		</dependency>
 
 		<!-- ================= Security / Auth ================= -->
@@ -140,18 +118,6 @@
 			<artifactId>flyway-database-postgresql</artifactId>
 		</dependency>
 
-		<!-- ================= Distributed Scheduler Locking (ShedLock) ================= -->
-		<dependency>
-			<groupId>net.javacrumbs.shedlock</groupId>
-			<artifactId>shedlock-spring</artifactId>
-			<version>${shedlock.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>net.javacrumbs.shedlock</groupId>
-			<artifactId>shedlock-provider-jdbc-template</artifactId>
-			<version>${shedlock.version}</version>
-		</dependency>
-
 		<!-- ================= Redis ================= -->
 		<!-- refresh token, blacklist jti, AI cache, Pub/Sub -->
 		<dependency>
@@ -182,22 +148,6 @@
 			<groupId>net.coobird</groupId>
 			<artifactId>thumbnailator</artifactId>
 			<version>${thumbnailator.version}</version>
-		</dependency>
-
-		<!-- ================= QR Code (ZXing) & Email ================= -->
-		<dependency>
-			<groupId>com.google.zxing</groupId>
-			<artifactId>core</artifactId>
-			<version>${zxing.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.google.zxing</groupId>
-			<artifactId>javase</artifactId>
-			<version>${zxing.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
 
 		<!-- ================= AI: Gemini ================= -->
@@ -244,17 +194,6 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.modulith</groupId>
-			<artifactId>spring-modulith-starter-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.tngtech.archunit</groupId>
-			<artifactId>archunit-junit5</artifactId>
-			<version>${archunit.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

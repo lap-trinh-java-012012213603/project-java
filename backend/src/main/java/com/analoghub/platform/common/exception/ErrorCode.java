@@ -9,14 +9,10 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
 
     // =========================================================================
-    // 1. SYSTEM, IDEMPOTENCY, RATE LIMIT & COMMON VALIDATION (SYS / IDEMP / VAL / RES)
+    // 1. SYSTEM & COMMON VALIDATION (SYS / VAL / RES)
     // =========================================================================
     INTERNAL_SERVER_ERROR("SYS_500", "An unexpected internal server error occurred. Please try again later", HttpStatus.INTERNAL_SERVER_ERROR),
     SERVICE_UNAVAILABLE("SYS_503", "Service is temporarily unavailable. Please try again later", HttpStatus.SERVICE_UNAVAILABLE),
-    RATE_LIMIT_EXCEEDED("SYS_429", "Too many requests. Please try again later", HttpStatus.TOO_MANY_REQUESTS),
-    IDEMPOTENCY_KEY_MISSING("IDEMP_400", "Missing required Idempotency-Key header", HttpStatus.BAD_REQUEST),
-    IDEMPOTENCY_REQUEST_IN_PROGRESS("IDEMP_409", "A request with this Idempotency-Key is currently in progress", HttpStatus.CONFLICT),
-    IDEMPOTENCY_KEY_PAYLOAD_MISMATCH("IDEMP_422", "Idempotency-Key was already used with a different request payload", HttpStatus.UNPROCESSABLE_ENTITY),
     VALIDATION_ERROR("VAL_400", "Invalid request payload or parameters", HttpStatus.BAD_REQUEST),
     MALFORMED_JSON_REQUEST("VAL_401", "Malformed JSON request or invalid data type (Enum/Date/UUID)", HttpStatus.BAD_REQUEST),
     MISSING_REQUIRED_PARAMETER("VAL_402", "Missing required request parameter", HttpStatus.BAD_REQUEST),

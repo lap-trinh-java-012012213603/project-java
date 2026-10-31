@@ -9,33 +9,19 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;
-import java.util.UUID;
 
 @Configuration
 @EnableJpaAuditing(auditorAwareRef = "auditorAware")
 public class JpaAuditingConfig {
+    private static final String SYSTEM = "system";
 
     @Bean
-    public AuditorAware<UUID> auditorAware() {
-        return () -> Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
-                .filter(Authentication::isAuthenticated)
-                .filter(auth -> !(auth instanceof AnonymousAuthenticationToken))
-                .flatMap(JpaAuditingConfig::extractUserId);
-    }
-
-    private static Optional<UUID> extractUserId(Authentication authentication) {
-        Object principal = authentication.getPrincipal();
-        if (principal instanceof UUID uuid) {
-            return Optional.of(uuid);
-        }
-        String name = authentication.getName();
-        if (name == null || name.isBlank()) {
-            return Optional.empty();
-        }
-        try {
-            return Optional.of(UUID.fromString(name.trim()));
-        } catch (IllegalArgumentException ex) {
-            return Optional.empty();
-        }
+    public AuditorAware<String> auditorAware() {
+        return () ->
+                Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
+                        .filter(Authentication::isAuthenticated)
+                        .filter(auth -> !(auth instanceof AnonymousAuthenticationToken))
+                        .map(Authentication::getName)
+                        .or(() -> Optional.of(SYSTEM));
     }
 }

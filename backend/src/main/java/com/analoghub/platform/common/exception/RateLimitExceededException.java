@@ -14,9 +14,4 @@ public class RateLimitExceededException extends BusinessException {
         );
         this.retryAfterSeconds = retryAfterSeconds;
     }
-
-    public RateLimitExceededException(ErrorCode errorCode, long retryAfterSeconds, String message) {
-        super(errorCode, message);
-        this.retryAfterSeconds = retryAfterSeconds;
-    }
 }
