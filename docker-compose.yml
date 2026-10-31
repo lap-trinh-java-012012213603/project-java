@@ -1,0 +1,93 @@
+name: ${COMPOSE_PROJECT_NAME}
+
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE}
+    container_name: ${POSTGRES_CONTAINER_NAME}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${BIND_IP}:${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: ${REDIS_IMAGE}
+    container_name: ${REDIS_CONTAINER_NAME}
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${BIND_IP}:${REDIS_PORT}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  elasticsearch:
+    image: ${ES_IMAGE}
+    container_name: ${ES_CONTAINER_NAME}
+    restart: unless-stopped
+    environment:
+      - discovery.type=${ES_DISCOVERY_TYPE}
+      - xpack.security.enabled=${ES_SECURITY_ENABLED}
+      - xpack.security.http.ssl.enabled=${ES_SSL_ENABLED}
+      - ES_JAVA_OPTS=${ES_JAVA_OPTS}
+    ports:
+      - "${BIND_IP}:${ES_PORT}:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  minio:
+    image: ${MINIO_IMAGE}
+    container_name: ${MINIO_CONTAINER_NAME}
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":${MINIO_CONSOLE_PORT}"]
+    environment:
+      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY}
+      MINIO_API_CORS_ALLOW_ORIGIN: ${MINIO_CORS_ALLOW_ORIGIN}
+    ports:
+      - "${BIND_IP}:${MINIO_API_PORT}:9000"
+      - "${BIND_IP}:${MINIO_CONSOLE_PORT}:${MINIO_CONSOLE_PORT}"
+    volumes:
+      - minio_data:/data
+
+  minio-init:
+    image: ${AWS_CLI_IMAGE}
+    container_name: ${MINIO_INIT_CONTAINER_NAME}
+    restart: "no"
+    depends_on:
+      - minio
+    environment:
+      AWS_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${STORAGE_SECRET_KEY}
+      AWS_DEFAULT_REGION: ${STORAGE_REGION}
+      MINIO_BUCKET: ${STORAGE_BUCKET_NAME}
+    entrypoint: >
+      /bin/sh -c "
+      until aws --endpoint-url http://minio:9000 s3api list-buckets > /dev/null 2>&1; do sleep 1; done;
+      aws --endpoint-url http://minio:9000 s3api head-bucket --bucket $${MINIO_BUCKET} 2>/dev/null
+      || aws --endpoint-url http://minio:9000 s3api create-bucket --bucket $${MINIO_BUCKET};
+      "
+
+volumes:
+  postgres_data:
+  redis_data:
+  es_data:
+  minio_data:
