@@ -1,49 +1,52 @@
 -- ==============================================================================
 -- V5: MIGRATION SEED MASTER DATA 
--- Chú ý: Sử dụng ON CONFLICT DO NOTHING để đảm bảo chạy an toàn nhiều lần (Idempotent)
+-- Đã chuẩn hóa chính xác theo schema V1, V2, V3 
 -- ==============================================================================
 
 -- ---------------------------------------------------------
--- 1. SEED 5 ROLES (Sử dụng bảng iam_roles từ V1 Cụm A)
+-- 1. SEED 5 ROLES (Bảng iam_roles)
 -- ---------------------------------------------------------
 INSERT INTO iam_roles (id, code, name, description) VALUES 
-(gen_random_uuid(), 'CUSTOMER', 'Customer', 'Người dùng hệ thống, khách hàng đặt dịch vụ Lab và mua bán Market'),
-(gen_random_uuid(), 'LAB_OWNER', 'Lab Owner', 'Chủ Lab, người quản lý lab_film_labs và xử lý đơn hàng bkg_lab_orders'),
-(gen_random_uuid(), 'EXPERT', 'Expert', 'Chuyên gia đăng bài com_expert_articles và chấm điểm QC'),
-(gen_random_uuid(), 'DELIVERY_PARTNER', 'Delivery Partner', 'Đối tác vận chuyển xử lý dlv_tasks'),
-(gen_random_uuid(), 'ADMIN', 'Admin', 'Quản trị viên hệ thống, quản lý adm_disputes và adm_moderation_tickets')
+(gen_random_uuid(), 'CUSTOMER', 'Customer', 'Khách hàng và người dùng hệ thống'),
+(gen_random_uuid(), 'LAB_OWNER', 'Lab Owner', 'Chủ Lab xử lý đơn hàng'),
+(gen_random_uuid(), 'EXPERT', 'Expert', 'Chuyên gia QC và bài viết'),
+(gen_random_uuid(), 'DELIVERY_PARTNER', 'Delivery Partner', 'Đối tác vận chuyển'),
+(gen_random_uuid(), 'ADMIN', 'Admin', 'Quản trị viên hệ thống')
 ON CONFLICT (code) DO NOTHING;
 
 -- ---------------------------------------------------------
--- 2. SEED 4 CONFIGURATIONS (Sử dụng bảng cfg_fee_configurations từ V1 Cụm A)
+-- 2. SEED 4 FEE CONFIGURATIONS (Bảng cfg_fee_configurations)
+-- Map với 4 scope: LAB_ORDER, MARKETPLACE_SALE, MARKETPLACE_SWAP, WORKSHOP_TICKET
 -- ---------------------------------------------------------
-INSERT INTO cfg_fee_configurations (id, config_key, config_name, fee_type, fee_value, status) VALUES 
-(gen_random_uuid(), 'PLATFORM_FEE_PCT', 'Phí nền tảng (Platform Fee)', 'PERCENTAGE', 5.00, 'ACTIVE'),
-(gen_random_uuid(), 'ESCROW_FEE_FIXED', 'Phí giữ tiền an toàn (Escrow)', 'FIXED', 10000.00, 'ACTIVE'),
-(gen_random_uuid(), 'DELIVERY_BASE_FEE', 'Phí vận chuyển cơ bản', 'FIXED', 25000.00, 'ACTIVE'),
-(gen_random_uuid(), 'VAT_TAX_PCT', 'Thuế VAT', 'PERCENTAGE', 8.00, 'ACTIVE')
-ON CONFLICT (config_key) DO NOTHING;
+INSERT INTO cfg_fee_configurations (id, fee_scope, commission_rate, fixed_fee_vnd, is_active) VALUES 
+(gen_random_uuid(), 'LAB_ORDER', 0.0500, 0, true),           -- Phí nền tảng Lab 5%
+(gen_random_uuid(), 'MARKETPLACE_SALE', 0.0500, 0, true),    -- Phí bán Market 5%
+(gen_random_uuid(), 'MARKETPLACE_SWAP', 0.0000, 10000.00, true), -- Phí cố định đổi đồ
+(gen_random_uuid(), 'WORKSHOP_TICKET', 0.0800, 0, true)      -- Phí vé Workshop 8% (VAT)
+ON CONFLICT (fee_scope) DO NOTHING;
 
 -- ---------------------------------------------------------
--- 3. SEED SYSTEM WALLETS (Sử dụng bảng pay_wallets từ V3 Cụm D)
+-- 3. SEED SYSTEM WALLETS (Bảng pay_wallets)
+-- Sử dụng mệnh đề SELECT WHERE NOT EXISTS để tránh lỗi duplicate cho system wallet
 -- ---------------------------------------------------------
--- Ghi chú: Ví hệ thống không gán cho user cụ thể nên owner_id để NULL 
-INSERT INTO pay_wallets (id, owner_id, wallet_type, balance, currency, status) VALUES 
-(gen_random_uuid(), NULL, 'SYSTEM_ESCROW', 0.00, 'VND', 'ACTIVE'),
-(gen_random_uuid(), NULL, 'SYSTEM_REVENUE', 0.00, 'VND', 'ACTIVE');
--- Nếu bảng pay_wallets có UNIQUE index (wallet_type) WHERE owner_id IS NULL, 
--- bạn có thể thêm: ON CONFLICT (wallet_type) DO NOTHING;
+INSERT INTO pay_wallets (id, owner_user_id, wallet_type, available_balance_vnd, locked_balance_vnd, currency)
+SELECT gen_random_uuid(), NULL, 'SYSTEM_ESCROW', 0.00, 0.00, 'VND'
+WHERE NOT EXISTS (SELECT 1 FROM pay_wallets WHERE wallet_type = 'SYSTEM_ESCROW');
+
+INSERT INTO pay_wallets (id, owner_user_id, wallet_type, available_balance_vnd, locked_balance_vnd, currency)
+SELECT gen_random_uuid(), NULL, 'SYSTEM_REVENUE', 0.00, 0.00, 'VND'
+WHERE NOT EXISTS (SELECT 1 FROM pay_wallets WHERE wallet_type = 'SYSTEM_REVENUE');
 
 -- ---------------------------------------------------------
--- 4. SEED DANH MỤC LAB FILM STOCK (Sử dụng bảng lab_film_stock_catalog từ V2 Cụm B)
+-- 4. SEED DANH MỤC LAB FILM STOCK (Bảng lab_film_stock_catalog)
+-- Định dạng chuẩn: film_format ('FMT_135'), process_type ('C41', 'BW', 'ECN2')
 -- ---------------------------------------------------------
-INSERT INTO lab_film_stock_catalog (id, code, brand, name, iso, format, type) VALUES 
-(gen_random_uuid(), 'KODAK_GOLD_200', 'Kodak', 'Kodak Gold 200', 200, '35mm', 'COLOR_NEGATIVE'),
-(gen_random_uuid(), 'KODAK_PORTRA_400', 'Kodak', 'Kodak Portra 400', 400, '35mm', 'COLOR_NEGATIVE'),
-(gen_random_uuid(), 'KODAK_ULTRAMAX_400', 'Kodak', 'Kodak UltraMax 400', 400, '35mm', 'COLOR_NEGATIVE'),
-(gen_random_uuid(), 'FUJI_C200', 'Fujifilm', 'Fujicolor C200', 200, '35mm', 'COLOR_NEGATIVE'),
-(gen_random_uuid(), 'FUJI_SUPERIA_400', 'Fujifilm', 'Fujicolor Superia X-TRA 400', 400, '35mm', 'COLOR_NEGATIVE'),
-(gen_random_uuid(), 'ILFORD_HP5_PLUS', 'Ilford', 'Ilford HP5 Plus 400', 400, '35mm', 'BLACK_AND_WHITE'),
-(gen_random_uuid(), 'KODAK_VISION3_250D', 'Kodak', 'Kodak Vision3 250D', 250, '35mm', 'CINEMA_COLOR'),
-(gen_random_uuid(), 'CINESTILL_800T', 'CineStill', 'CineStill 800T', 800, '35mm', 'COLOR_NEGATIVE')
-ON CONFLICT (code) DO NOTHING;
+INSERT INTO lab_film_stock_catalog (id, code, brand, name, iso, film_format, process_type) VALUES 
+(gen_random_uuid(), 'KODAK_GOLD_200', 'Kodak', 'Kodak Gold 200', 200, 'FMT_135', 'C41'),
+(gen_random_uuid(), 'KODAK_PORTRA_400', 'Kodak', 'Kodak Portra 400', 400, 'FMT_135', 'C41'),
+(gen_random_uuid(), 'KODAK_ULTRAMAX_400', 'Kodak', 'Kodak UltraMax 400', 400, 'FMT_135', 'C41'),
+(gen_random_uuid(), 'FUJI_C200', 'Fujifilm', 'Fujicolor C200', 200, 'FMT_135', 'C41'),
+(gen_random_uuid(), 'FUJI_SUPERIA_400', 'Fujifilm', 'Fujicolor Superia X-TRA 400', 400, 'FMT_135', 'C41'),
+(gen_random_uuid(), 'ILFORD_HP5_PLUS', 'Ilford', 'Ilford HP5 Plus 400', 400, 'FMT_135', 'BW'),
+(gen_random_uuid(), 'KODAK_VISION3_250D', 'Kodak', 'Kodak Vision3 250D', 250, 'FMT_135', 'ECN2'),
+(gen_random_uuid(), 'CINESTILL_800T', 'CineStill', 'CineStill 800T', 800, 'FMT_135', 'C41')
