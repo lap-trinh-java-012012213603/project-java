@@ -1,4 +1,4 @@
 @org.springframework.modulith.ApplicationModule(
-        displayName = "Film Lab"
+        displayName = "Film Lab Management"
 )
 package com.analoghub.platform.filmlab;

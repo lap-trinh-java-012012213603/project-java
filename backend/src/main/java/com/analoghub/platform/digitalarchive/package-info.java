@@ -1,4 +1,4 @@
 @org.springframework.modulith.ApplicationModule(
-        displayName = "Digital Archive"
+        displayName = "Digital Archive Management"
 )
 package com.analoghub.platform.digitalarchive;
