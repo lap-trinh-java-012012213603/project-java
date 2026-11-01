@@ -62,6 +62,7 @@ public class StorageService {
     public PresignedUploadResult generateRollFrameUploadUrl(
             StorageCategory frameCategory, // ROLL_SCAN_THUMB, ROLL_SCAN_PREVIEW, hoặc ROLL_SCAN_ORIGINAL
             UUID labId,
+            UUID orderId,
             UUID rollId,
             int frameNumber,
             String originalFileName,
@@ -76,8 +77,9 @@ public class StorageService {
             default -> "original";
         };
         String ext = extractExtension(originalFileName, contentType);
-        String objectKey = String.format("private/tenants/%s/rolls/%s/frames/%02d_%s%s",
-                labId, rollId, frameNumber, variant, ext
+
+        String objectKey = String.format("tenants/%s/orders/%s/rolls/%s/%02d_%s%s",
+                labId, orderId, rollId, frameNumber, variant, ext
         );
 
         String putUrl = createPresignedPutUrl(objectKey, contentType);
