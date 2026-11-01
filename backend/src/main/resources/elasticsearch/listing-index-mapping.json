@@ -1,0 +1,43 @@
+{
+  "settings": {
+    "analysis": {
+      "filter": {
+        "autocomplete_filter": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 20
+        }
+      },
+      "analyzer": {
+        "vi_analyzer": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "icu_folding"]
+        },
+        "autocomplete_analyzer": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "icu_folding", "autocomplete_filter"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "id": { "type": "keyword" },
+      "title": { 
+        "type": "text", 
+        "analyzer": "vi_analyzer",
+        "fields": {
+          "autocomplete": {
+            "type": "text",
+            "analyzer": "autocomplete_analyzer"
+          }
+        }
+      },
+      "category": { "type": "keyword" },
+      "price_vnd": { "type": "double" },
+      "status": { "type": "keyword" }
+    }
+  }
+}
