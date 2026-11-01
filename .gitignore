@@ -90,3 +90,8 @@ __pycache__/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# ===================================================================
+# 7. LOCAL ARCHITECTURE DOCS
+# ===================================================================
+analoghub-architecture-docs/

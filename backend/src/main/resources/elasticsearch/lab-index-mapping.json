@@ -1,0 +1,23 @@
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "vi_analyzer": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "icu_folding"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "id": { "type": "keyword" },
+      "slug": { "type": "keyword" },
+      "name": { "type": "text", "analyzer": "vi_analyzer" },
+      "location": { "type": "geo_point" },
+      "avg_rating": { "type": "float" },
+      "services": { "type": "keyword" }
+    }
+  }
+}
