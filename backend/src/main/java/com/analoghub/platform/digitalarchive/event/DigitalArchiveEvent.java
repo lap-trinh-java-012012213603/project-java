@@ -1,4 +1,4 @@
-package com.analogohub.platform.digitalarchive.event;
+package com.analoghub.platform.digitalarchive.event;
 
 import java.util.UUID;
 

@@ -1,4 +1,4 @@
-package com.analogohub.platform.labworkflow.event;
+package com.analoghub.platform.labworkflow.event;
 
 import java.util.UUID;
 

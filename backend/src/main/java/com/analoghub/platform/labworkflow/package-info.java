@@ -1,2 +1,4 @@
-@org.springframework.modulith.ApplicationModule
-package com.analogohub.platform.labworkflow;
+@org.springframework.modulith.ApplicationModule(
+        displayName = "Lab Workflow"
+)
+package com.analoghub.platform.labworkflow;

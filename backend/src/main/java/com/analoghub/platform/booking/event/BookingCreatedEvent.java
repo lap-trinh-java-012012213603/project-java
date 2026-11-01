@@ -1,4 +1,4 @@
-package com.analogohub.platform.booking.event;
+package com.analoghub.platform.booking.event;
 
 import java.util.UUID;
 

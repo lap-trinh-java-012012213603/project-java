@@ -1,4 +1,4 @@
-package com.analogohub.platform.filmlab.event;
+package com.analoghub.platform.filmlab.event;
 
 import java.util.UUID;
 

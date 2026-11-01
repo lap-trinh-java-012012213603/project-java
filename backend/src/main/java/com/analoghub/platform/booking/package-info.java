@@ -1,2 +1,4 @@
-@org.springframework.modulith.ApplicationModule
-package com.analogohub.platform.booking;
+@org.springframework.modulith.ApplicationModule(
+        displayName = "Booking"
+)
+package com.analoghub.platform.booking;
