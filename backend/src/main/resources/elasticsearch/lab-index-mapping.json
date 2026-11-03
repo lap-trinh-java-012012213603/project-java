@@ -1,23 +1,68 @@
 {
   "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
     "analysis": {
+      "filter": {
+        "autocomplete_edge_ngram": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 15
+        }
+      },
       "analyzer": {
+        "vi_folded_analyzer": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "icu_folding"]
+        },
         "vi_analyzer": {
           "type": "custom",
           "tokenizer": "standard",
           "filter": ["lowercase", "icu_folding"]
+        },
+        "vi_autocomplete_index_analyzer": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "icu_folding", "autocomplete_edge_ngram"]
         }
       }
     }
   },
   "mappings": {
     "properties": {
-      "id": { "type": "keyword" },
+      "labId": { "type": "keyword" },
       "slug": { "type": "keyword" },
-      "name": { "type": "text", "analyzer": "vi_analyzer" },
+      "name": {
+        "type": "text",
+        "analyzer": "vi_folded_analyzer",
+        "fields": {
+          "autocomplete": {
+            "type": "text",
+            "analyzer": "vi_autocomplete_index_analyzer",
+            "search_analyzer": "vi_folded_analyzer"
+          },
+          "keyword": { "type": "keyword" },
+          "suggest": { "type": "completion" }
+        }
+      },
+      "bio": { "type": "text", "analyzer": "vi_folded_analyzer" },
+      "fullAddress": { "type": "text", "analyzer": "vi_folded_analyzer" },
+      "districtCode": { "type": "keyword" },
+      "provinceCode": { "type": "keyword" },
       "location": { "type": "geo_point" },
-      "avg_rating": { "type": "float" },
-      "services": { "type": "keyword" }
+      "coverImageUrl": { "type": "keyword", "index": false },
+      "status": { "type": "keyword" },
+      "supportedFormats": { "type": "keyword" },
+      "supportedProcesses": { "type": "keyword" },
+      "scannerModels": { "type": "keyword" },
+      "minPriceVnd": { "type": "scaled_float", "scaling_factor": 100 },
+      "maxPriceVnd": { "type": "scaled_float", "scaling_factor": 100 },
+      "estimatedTurnaroundHours": { "type": "integer" },
+      "isAcceptingOrders": { "type": "boolean" },
+      "avgRating": { "type": "float" },
+      "reviewCount": { "type": "integer" },
+      "updatedAt": { "type": "date" }
     }
   }
 }
