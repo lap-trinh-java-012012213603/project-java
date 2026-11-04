@@ -416,6 +416,26 @@ public class PaymentCheckoutService {
         return VnpayIpnResponse.confirmSuccess();
     }
 
+    @Transactional
+    public int expireOverdueInitiatedTransactions(Instant now) {
+        Instant effectiveNow = now != null ? now : Instant.now();
+        List<PaymentTransaction> expiredTxns = paymentTransactionRepository.findExpiredInitiatedTransactions(effectiveNow);
+        if (expiredTxns.isEmpty()) {
+            return 0;
+        }
+        for (PaymentTransaction txn : expiredTxns) {
+            txn.setStatus(PaymentTransactionStatus.EXPIRED);
+            paymentTransactionRepository.save(txn);
+            eventPublisher.publishEvent(new PaymentFailedEvent(
+                    txn.getId(),
+                    txn.getPaymentPurpose().name(),
+                    txn.getReferenceId(),
+                    "PAYMENT_EXPIRED"
+            ));
+        }
+        return expiredTxns.size();
+    }
+
     private void expirePendingInitiatedTransactions(PaymentPurpose purpose, UUID referenceId) {
         List<PaymentTransaction> initiatedList =
                 paymentTransactionRepository.findByPaymentPurposeAndReferenceIdAndStatus(

@@ -396,6 +396,30 @@ public class EscrowHoldService {
         escrowHoldRepository.save(escrow);
     }
 
+    /**
+     * Automatically releases all Escrow holds that have reached {@code autoReleaseAt <= now}
+     * and are still in {@code HELD} or {@code PARTIALLY_REFUNDED} status (not {@code FROZEN_BY_DISPUTE}).
+     */
+    @Transactional
+    public int autoReleaseDueEscrows(Instant now) {
+        Instant effectiveNow = now != null ? now : Instant.now();
+        java.util.List<EscrowHold> dueHolds = escrowHoldRepository.findDueForAutoRelease(
+                java.util.EnumSet.of(EscrowStatus.HELD, EscrowStatus.PARTIALLY_REFUNDED),
+                effectiveNow
+        );
+        if (dueHolds.isEmpty()) {
+            return 0;
+        }
+        int releasedCount = 0;
+        for (EscrowHold hold : dueHolds) {
+            if (hold.getStatus() != null && hold.getStatus().isReleasable()) {
+                release(hold.getReferenceId(), hold.getReferenceType());
+                releasedCount++;
+            }
+        }
+        return releasedCount;
+    }
+
     private EscrowHold findEscrowForUpdate(String referenceType, UUID referenceId) {
         if (referenceType != null && !referenceType.isBlank()) {
             String normalizedType = normalizeReferenceType(referenceType);
