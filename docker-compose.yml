@@ -43,6 +43,13 @@ services:
       - xpack.security.enabled=${ES_SECURITY_ENABLED}
       - xpack.security.http.ssl.enabled=${ES_SSL_ENABLED}
       - ES_JAVA_OPTS=${ES_JAVA_OPTS}
+    command: >
+      bash -c "
+        if [ ! -d plugins/analysis-icu ]; then
+          bin/elasticsearch-plugin install --batch analysis-icu
+        fi &&
+        /usr/local/bin/docker-entrypoint.sh elasticsearch
+      "
     ports:
       - "${BIND_IP}:${ES_PORT}:9200"
     volumes:
