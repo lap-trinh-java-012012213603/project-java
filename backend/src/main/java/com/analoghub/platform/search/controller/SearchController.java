@@ -6,7 +6,10 @@ import com.analoghub.platform.common.ratelimit.RateLimitScope;
 import com.analoghub.platform.search.dto.LabAutocompleteResponse;
 import com.analoghub.platform.search.dto.LabSearchCriteria;
 import com.analoghub.platform.search.dto.LabSearchResponse;
+import com.analoghub.platform.search.dto.ListingSearchCriteria;
+import com.analoghub.platform.search.dto.ListingSearchResponse;
 import com.analoghub.platform.search.service.LabSearchService;
+import com.analoghub.platform.search.service.ListingSearchService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -28,10 +31,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/search")
 @RequiredArgsConstructor
-@Tag(name = "14. Search (Elasticsearch 8)", description = "Tìm kiếm địa lý Film Lab, lọc đa chiều & gợi ý tức thời")
+@Tag(name = "14. Search (Elasticsearch 8)", description = "Tìm kiếm địa lý Film Lab, lọc đa chiều, gợi ý tức thời & tìm kiếm thiết bị C2C")
 public class SearchController {
 
     private final LabSearchService labSearchService;
+    private final ListingSearchService listingSearchService;
 
     @GetMapping("/labs")
     @Operation(summary = "API 14.1: Tìm kiếm, lọc đa chiều & so sánh Film Lab theo tọa độ địa lý")
@@ -64,5 +68,14 @@ public class SearchController {
         LabAutocompleteResponse response = labSearchService.autocompleteLabs(prefix, provinceCode, limit);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách gợi ý Film Lab thành công.", response));
     }
-}
 
+    @GetMapping("/listings")
+    @Operation(summary = "API 14.3: Tìm kiếm & lọc thiết bị Chợ C2C tiếng Việt có dấu / không dấu (icu_folding)")
+    @RateLimit(keyPrefix = "srch:search-listings", capacity = 120, windowSeconds = 60, scope = RateLimitScope.IP)
+    public ResponseEntity<ApiResponse<ListingSearchResponse>> searchListings(
+            @Valid @ModelAttribute ListingSearchCriteria criteria
+    ) {
+        ListingSearchResponse response = listingSearchService.searchListings(criteria);
+        return ResponseEntity.ok(ApiResponse.success("Tìm kiếm thiết bị trên chợ C2C thành công.", response));
+    }
+}
