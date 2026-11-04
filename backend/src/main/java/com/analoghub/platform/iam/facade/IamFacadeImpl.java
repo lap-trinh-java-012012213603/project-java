@@ -21,6 +21,7 @@ import com.analoghub.platform.iam.repository.UserAddressRepository;
 import com.analoghub.platform.iam.repository.UserRepository;
 import com.analoghub.platform.iam.repository.UserRoleRepository;
 import com.analoghub.platform.iam.service.RefreshTokenFamilyService;
+import com.analoghub.platform.iam.service.UserProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -48,6 +49,7 @@ public class IamFacadeImpl implements IamFacade {
     private final UserAddressRepository userAddressRepository;
     private final RoleApplicationRepository roleApplicationRepository;
     private final RefreshTokenFamilyService refreshTokenFamilyService;
+    private final UserProfileService userProfileService;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
@@ -172,6 +174,7 @@ public class IamFacadeImpl implements IamFacade {
         Role role = roleRepository.findByCode(roleCode)
                 .orElseGet(() -> roleRepository.save(Role.builder()
                         .code(roleCode)
+                        .name(roleCode.name())
                         .description("System role: " + roleCode.name())
                         .build()));
 
@@ -183,6 +186,7 @@ public class IamFacadeImpl implements IamFacade {
                     .build());
             log.info("Granted role {} to userId={}", roleCode, userId);
         }
+        userProfileService.evictUserProfileCache(userId);
     }
 
     @Override
@@ -196,6 +200,7 @@ public class IamFacadeImpl implements IamFacade {
                     userRoleRepository.deleteByUserIdAndRoleId(userId, role.getId());
                     log.info("Revoked role {} from userId={}", roleCode, userId);
                 });
+        userProfileService.evictUserProfileCache(userId);
     }
 
     @Override
@@ -223,12 +228,13 @@ public class IamFacadeImpl implements IamFacade {
     @Override
     @Transactional
     public RoleApplicationDto approveRoleApplication(UUID applicationId, UUID adminUserId, String reviewNote) {
-        RoleApplication application = roleApplicationRepository.findById(applicationId)
+        RoleApplication application = roleApplicationRepository.findByIdForUpdate(applicationId)
+                .or(() -> roleApplicationRepository.findById(applicationId))
                 .orElseThrow(() -> new ResourceNotFoundException("RoleApplication", applicationId));
 
         if (application.getStatus() != RoleApplicationStatus.PENDING) {
             throw new BusinessException(
-                    ErrorCode.VALIDATION_ERROR,
+                    ErrorCode.DUPLICATE_RESOURCE,
                     "Đơn đăng ký nâng cấp vai trò đã được xử lý trước đó."
             );
         }
@@ -238,9 +244,10 @@ public class IamFacadeImpl implements IamFacade {
         application.setReviewedByAdminId(adminUserId);
         application.setReviewNote(reviewNote);
         application.setReviewedAt(reviewedAt);
-        application = roleApplicationRepository.save(application);
+        application = roleApplicationRepository.saveAndFlush(application);
 
         grantRole(application.getUserId(), application.getRequestedRole());
+        userProfileService.evictUserProfileCache(application.getUserId());
 
         eventPublisher.publishEvent(new RoleApplicationApprovedEvent(
                 UUID.randomUUID(),
@@ -260,12 +267,13 @@ public class IamFacadeImpl implements IamFacade {
     @Override
     @Transactional
     public RoleApplicationDto rejectRoleApplication(UUID applicationId, UUID adminUserId, String reviewNote) {
-        RoleApplication application = roleApplicationRepository.findById(applicationId)
+        RoleApplication application = roleApplicationRepository.findByIdForUpdate(applicationId)
+                .or(() -> roleApplicationRepository.findById(applicationId))
                 .orElseThrow(() -> new ResourceNotFoundException("RoleApplication", applicationId));
 
         if (application.getStatus() != RoleApplicationStatus.PENDING) {
             throw new BusinessException(
-                    ErrorCode.VALIDATION_ERROR,
+                    ErrorCode.DUPLICATE_RESOURCE,
                     "Đơn đăng ký nâng cấp vai trò đã được xử lý trước đó."
             );
         }
@@ -274,7 +282,7 @@ public class IamFacadeImpl implements IamFacade {
         application.setReviewedByAdminId(adminUserId);
         application.setReviewNote(reviewNote);
         application.setReviewedAt(Instant.now());
-        application = roleApplicationRepository.save(application);
+        application = roleApplicationRepository.saveAndFlush(application);
 
         log.info("Rejected role application: id={}, userId={}, role={}, adminId={}",
                 application.getId(), application.getUserId(), application.getRequestedRole(), adminUserId);
@@ -288,15 +296,17 @@ public class IamFacadeImpl implements IamFacade {
         if (newStatus == null) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "newStatus is required");
         }
-        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+        User user = userRepository.findByIdForUpdate(userId)
+                .or(() -> userRepository.findByIdAndDeletedAtIsNull(userId))
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
         user.setAccountStatus(newStatus);
-        userRepository.save(user);
+        userRepository.saveAndFlush(user);
 
         if (newStatus == AccountStatus.SUSPENDED || newStatus == AccountStatus.BANNED) {
             refreshTokenFamilyService.revokeAllUserTokens(userId);
         }
+        userProfileService.evictUserProfileCache(userId);
 
         log.info("Updated account status: userId={}, newStatus={}, adminId={}, reason={}",
                 userId, newStatus, adminUserId, reason);
@@ -333,7 +343,9 @@ public class IamFacadeImpl implements IamFacade {
                 address.getProvinceCode(),
                 address.getLatitude(),
                 address.getLongitude(),
-                address.isDefault()
+                address.isDefault(),
+                address.getCreatedAt(),
+                address.getUpdatedAt()
         );
     }
 
