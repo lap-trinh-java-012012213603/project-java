@@ -17,7 +17,8 @@ public class SecurityConfig {
     private final RestSecurityErrorHandler securityErrorHandler;
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/users/registration",
-            "/api/auth/login"
+            "/api/auth/login",
+            "/api/v1/search/**"
     };
 
     public SecurityConfig(RestSecurityErrorHandler securityErrorHandler) {
