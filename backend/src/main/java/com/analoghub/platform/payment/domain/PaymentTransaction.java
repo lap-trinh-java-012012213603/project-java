@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,11 +26,16 @@ import java.util.UUID;
 @AllArgsConstructor
 public class PaymentTransaction extends BaseAuditEntity {
 
+    public static final String PENDING_PAYEE_PREFIX = "PAYEE:";
+
     @Column(name = "txn_code", length = 64, nullable = false, unique = true)
     private String txnCode;
 
     @Column(name = "payer_user_id", nullable = false)
     private UUID payerUserId;
+
+    @Transient
+    private UUID payeeUserId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_purpose", length = 32, nullable = false)
@@ -57,4 +63,25 @@ public class PaymentTransaction extends BaseAuditEntity {
 
     @Column(name = "paid_at")
     private Instant paidAt;
+
+    public UUID getResolvedPayeeUserId() {
+        if (payeeUserId != null) {
+            return payeeUserId;
+        }
+        if (gatewayTxnNo != null && gatewayTxnNo.startsWith(PENDING_PAYEE_PREFIX)) {
+            try {
+                return UUID.fromString(gatewayTxnNo.substring(PENDING_PAYEE_PREFIX.length()).trim());
+            } catch (IllegalArgumentException ignored) {
+                // fallback below
+            }
+        }
+        return payerUserId;
+    }
+
+    public String getPublicGatewayTxnNo() {
+        if (gatewayTxnNo != null && gatewayTxnNo.startsWith(PENDING_PAYEE_PREFIX)) {
+            return null;
+        }
+        return gatewayTxnNo;
+    }
 }
