@@ -31,22 +31,22 @@ public class UserAddress extends BaseAuditEntity {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
-    @Column(name = "recipient_name", nullable = false, length = 100)
+    @Column(name = "recipient_name", nullable = false, length = 120)
     private String recipientName;
 
     @Column(name = "recipient_phone", nullable = false, length = 20)
     private String recipientPhone;
 
-    @Column(name = "full_address", nullable = false, length = 500)
+    @Column(name = "full_address", nullable = false, length = 300)
     private String fullAddress;
 
-    @Column(name = "ward_code", nullable = false, length = 20)
+    @Column(name = "ward_code", length = 32)
     private String wardCode;
 
-    @Column(name = "district_code", nullable = false, length = 20)
+    @Column(name = "district_code", nullable = false, length = 32)
     private String districtCode;
 
-    @Column(name = "province_code", nullable = false, length = 20)
+    @Column(name = "province_code", nullable = false, length = 32)
     private String provinceCode;
 
     @Column(name = "latitude")
