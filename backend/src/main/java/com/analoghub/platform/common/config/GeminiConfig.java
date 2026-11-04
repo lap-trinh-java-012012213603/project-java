@@ -1,9 +1,11 @@
 package com.analoghub.platform.common.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.genai.Client;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,5 +32,11 @@ public class GeminiConfig {
         return Client.builder()
                 .apiKey(apiKey)
                 .build();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ObjectMapper.class)
+    public ObjectMapper jackson2ObjectMapper() {
+        return new ObjectMapper().findAndRegisterModules();
     }
 }
