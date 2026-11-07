@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.3.5</version>
+		<version>4.0.7</version>
 		<relativePath/>
 	</parent>
 
@@ -20,29 +20,24 @@
 	<properties>
 		<java.version>21</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
-
-		<!-- Override Lombok version để đồng bộ dứt điểm với JDK 21 -->
-		<lombok.version>1.18.36</lombok.version>
 
 		<mapstruct.version>1.6.3</mapstruct.version>
 		<lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
-		<jjwt.version>0.12.5</jjwt.version>
-		<springdoc.version>2.5.0</springdoc.version>
-		<awssdk.version>2.25.52</awssdk.version>
-		<google-genai.version>0.3.0</google-genai.version>
-		<bucket4j.version>8.10.1</bucket4j.version>
+		<jjwt.version>0.13.0</jjwt.version>
+		<springdoc.version>3.0.3</springdoc.version>
+		<awssdk.version>2.42.23</awssdk.version>
+		<google-genai.version>1.58.0</google-genai.version>
+		<bucket4j.version>8.20.0</bucket4j.version>
 		<thumbnailator.version>0.4.20</thumbnailator.version>
-		<spring-modulith.version>1.2.5</spring-modulith.version>
-		<archunit.version>1.3.0</archunit.version>
-		<shedlock.version>5.16.0</shedlock.version>
+		<spring-modulith.version>2.1.1</spring-modulith.version>
+		<archunit.version>1.5.1</archunit.version>
+		<shedlock.version>7.10.1</shedlock.version>
 		<zxing.version>3.5.3</zxing.version>
-		<testcontainers.version>1.19.8</testcontainers.version>
-		<jspecify.version>1.0.0</jspecify.version>
 	</properties>
 
 	<dependencyManagement>
 		<dependencies>
+			<!-- Đồng bộ version cho Spring Modulith (Modular Monolith + Transactional Outbox) -->
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-bom</artifactId>
@@ -50,17 +45,11 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
+			<!-- Đồng bộ version cho toàn bộ module AWS SDK v2 (S3 client dùng cho R2/MinIO) -->
 			<dependency>
 				<groupId>software.amazon.awssdk</groupId>
 				<artifactId>bom</artifactId>
 				<version>${awssdk.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.testcontainers</groupId>
-				<artifactId>testcontainers-bom</artifactId>
-				<version>${testcontainers.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -71,7 +60,7 @@
 		<!-- ================= Web / API ================= -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
+			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -81,6 +70,7 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
+		<!-- Realtime: thông báo trạng thái đơn hàng (kết hợp Redis Pub/Sub) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-websocket</artifactId>
@@ -91,7 +81,7 @@
 			<version>${springdoc.version}</version>
 		</dependency>
 
-		<!-- ================= Modular Monolith ================= -->
+		<!-- ================= Modular Monolith & Transactional Outbox (Spring Modulith) ================= -->
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-starter-core</artifactId>
@@ -123,13 +113,8 @@
 			<version>${jjwt.version}</version>
 			<scope>runtime</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.jspecify</groupId>
-			<artifactId>jspecify</artifactId>
-			<version>${jspecify.version}</version>
-		</dependency>
 
-		<!-- ================= Database & Flyway ================= -->
+		<!-- ================= PostgreSQL + pgvector ================= -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -139,16 +124,23 @@
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+		<!-- Hibernate hỗ trợ sẵn kiểu vector của pgvector (float[] + SqlTypes.VECTOR,
+             hàm cosine_distance / l2_distance trong HQL). Version bám theo Hibernate của Boot -->
 		<dependency>
-			<groupId>org.flywaydb</groupId>
-			<artifactId>flyway-core</artifactId>
+			<groupId>org.hibernate.orm</groupId>
+			<artifactId>hibernate-vector</artifactId>
+			<version>${hibernate.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-database-postgresql</artifactId>
 		</dependency>
 
-		<!-- ================= ShedLock ================= -->
+		<!-- ================= Distributed Scheduler Locking (ShedLock) ================= -->
 		<dependency>
 			<groupId>net.javacrumbs.shedlock</groupId>
 			<artifactId>shedlock-spring</artifactId>
@@ -160,42 +152,39 @@
 			<version>${shedlock.version}</version>
 		</dependency>
 
-		<!-- ================= Redis & Rate Limit ================= -->
+		<!-- ================= Redis ================= -->
+		<!-- refresh token, blacklist jti, AI cache, Pub/Sub -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-redis</artifactId>
 		</dependency>
+		<!-- Rate limiting phân tán trên Redis (giới hạn lượt gọi AI theo user) -->
 		<dependency>
 			<groupId>com.bucket4j</groupId>
-			<artifactId>bucket4j-core</artifactId>
+			<artifactId>bucket4j_jdk17-lettuce</artifactId>
 			<version>${bucket4j.version}</version>
 		</dependency>
 
-		<!-- ================= AI Assistant (Google GenAI) ================= -->
-		<dependency>
-			<groupId>com.google.genai</groupId>
-			<artifactId>google-genai</artifactId>
-			<version>${google-genai.version}</version>
-		</dependency>
-
 		<!-- ================= Elasticsearch ================= -->
+		<!-- Lab search (geo-point, filter, autocomplete) + Marketplace full-text tiếng Việt -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-elasticsearch</artifactId>
 		</dependency>
 
-		<!-- ================= Object storage ================= -->
+		<!-- ================= Object storage (Cloudflare R2 / MinIO - S3 compatible) ================= -->
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>s3</artifactId>
 		</dependency>
+		<!-- Tạo preview / thumbnail từ ảnh scan gốc -->
 		<dependency>
 			<groupId>net.coobird</groupId>
 			<artifactId>thumbnailator</artifactId>
 			<version>${thumbnailator.version}</version>
 		</dependency>
 
-		<!-- ================= QR Code & Email ================= -->
+		<!-- ================= QR Code (ZXing) & Email ================= -->
 		<dependency>
 			<groupId>com.google.zxing</groupId>
 			<artifactId>core</artifactId>
@@ -211,12 +200,18 @@
 			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
 
+		<!-- ================= AI: Gemini ================= -->
+		<dependency>
+			<groupId>com.google.genai</groupId>
+			<artifactId>google-genai</artifactId>
+			<version>${google-genai.version}</version>
+		</dependency>
+
 		<!-- ================= Dev tooling ================= -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<version>${lombok.version}</version>
-			<scope>provided</scope>
+			<optional>true</optional>
 		</dependency>
 		<dependency>
 			<groupId>org.mapstruct</groupId>
@@ -237,8 +232,18 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-test</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webmvc-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -257,19 +262,20 @@
 			<artifactId>spring-boot-testcontainers</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- Testcontainers 2.x: tên artifact có tiền tố testcontainers- -->
 		<dependency>
 			<groupId>org.testcontainers</groupId>
-			<artifactId>junit-jupiter</artifactId>
+			<artifactId>testcontainers-junit-jupiter</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.testcontainers</groupId>
-			<artifactId>postgresql</artifactId>
+			<artifactId>testcontainers-postgresql</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.testcontainers</groupId>
-			<artifactId>elasticsearch</artifactId>
+			<artifactId>testcontainers-elasticsearch</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -279,11 +285,9 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>${maven-compiler-plugin.version}</version>
 				<configuration>
-					<source>21</source>
-					<target>21</target>
 					<annotationProcessorPaths>
+						<!-- Thứ tự quan trọng: Lombok -> binding -> MapStruct -->
 						<path>
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
@@ -303,18 +307,10 @@
 					<compilerArgs>
 						<arg>-Amapstruct.defaultComponentModel=spring</arg>
 						<arg>-Amapstruct.unmappedTargetPolicy=WARN</arg>
-						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
-						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
-						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
-						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
-						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
-						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
-						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
-						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
-						<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
 					</compilerArgs>
 				</configuration>
 			</plugin>
+
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>

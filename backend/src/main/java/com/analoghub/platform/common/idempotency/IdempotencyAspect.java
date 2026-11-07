@@ -22,9 +22,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.ObjectMapper;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -127,14 +126,7 @@ public class IdempotencyAspect {
                 status = responseEntity.getStatusCode().value();
                 bodyToStore = responseEntity.getBody();
             }
-
-            String serializedResponse;
-            try {
-                serializedResponse = bodyToStore != null ? objectMapper.writeValueAsString(bodyToStore) : null;
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException("Failed to serialize idempotency response", e);
-            }
-
+            String serializedResponse = bodyToStore != null ? objectMapper.writeValueAsString(bodyToStore) : null;
             storeService.markCompleted(idempotencyKey, status, serializedResponse);
 
             return result;
@@ -169,30 +161,26 @@ public class IdempotencyAspect {
         int status = existing.getResponseStatus() != null ? existing.getResponseStatus() : 200;
         String json = existing.getResponseBody();
 
-        try {
-            if (ResponseEntity.class.isAssignableFrom(returnType)) {
-                if (json == null || json.isBlank()) {
-                    return ResponseEntity.status(status).build();
-                }
-                if (genericReturnType instanceof ParameterizedType paramType) {
-                    Type bodyType = paramType.getActualTypeArguments()[0];
-                    JavaType javaType = objectMapper.getTypeFactory().constructType(bodyType);
-                    Object body = objectMapper.readValue(json, javaType);
-                    return ResponseEntity.status(status).body(body);
-                }
-                Object body = objectMapper.readValue(json, Object.class);
+        if (ResponseEntity.class.isAssignableFrom(returnType)) {
+            if (json == null || json.isBlank()) {
+                return ResponseEntity.status(status).build();
+            }
+            if (genericReturnType instanceof ParameterizedType paramType) {
+                Type bodyType = paramType.getActualTypeArguments()[0];
+                JavaType javaType = objectMapper.getTypeFactory().constructType(bodyType);
+                Object body = objectMapper.readValue(json, javaType);
                 return ResponseEntity.status(status).body(body);
             }
-
-            if (void.class.equals(returnType) || Void.class.equals(returnType) || json == null || json.isBlank()) {
-                return null;
-            }
-
-            JavaType javaType = objectMapper.getTypeFactory().constructType(genericReturnType);
-            return objectMapper.readValue(json, javaType);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to deserialize cached idempotency response", e);
+            Object body = objectMapper.readValue(json, Object.class);
+            return ResponseEntity.status(status).body(body);
         }
+
+        if (void.class.equals(returnType) || Void.class.equals(returnType) || json == null || json.isBlank()) {
+            return null;
+        }
+
+        JavaType javaType = objectMapper.getTypeFactory().constructType(genericReturnType);
+        return objectMapper.readValue(json, javaType);
     }
 
     private String serializeArguments(Object[] args) {
