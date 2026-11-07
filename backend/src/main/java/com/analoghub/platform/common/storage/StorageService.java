@@ -1,4 +1,4 @@
-﻿package com.analoghub.platform.common.storage;
+package com.analoghub.platform.common.storage;
 
 import com.analoghub.platform.common.exception.ArchiveStorageException;
 import lombok.RequiredArgsConstructor;
@@ -31,9 +31,6 @@ public class StorageService {
             long expiresInSeconds
     ) {}
 
-    /**
-     * 1. Dùng cho các file thông thường (Avatar, Ảnh Lab, Ảnh Marketplace, Ảnh bài viết Community)
-     */
     public PresignedUploadResult generatePublicUploadUrl(
             StorageCategory category,
             UUID ownerOrEntityId,
@@ -55,12 +52,8 @@ public class StorageService {
         return new PresignedUploadResult(objectKey, putUrl, props.getPresignPutExpirationMinutes() * 60);
     }
 
-    /**
-     * 2. Dùng riêng cho Film Lab khi upload 36 kiểu ảnh scan của 1 cuộn phim (Multi-tenant isolation)
-     * Kết quả key dạng: private/tenants/{labId}/orders/{orderId}/rolls/{rollId}/frames/01_original.jpg
-     */
     public PresignedUploadResult generateRollFrameUploadUrl(
-            StorageCategory frameCategory, // ROLL_SCAN_THUMB, ROLL_SCAN_PREVIEW, hoặc ROLL_SCAN_ORIGINAL
+            StorageCategory frameCategory,
             UUID labId,
             UUID orderId,
             UUID rollId,
@@ -86,11 +79,6 @@ public class StorageService {
         return new PresignedUploadResult(objectKey, putUrl, props.getPresignPutExpirationMinutes() * 60);
     }
 
-    /**
-     * 3. Lấy URL để trả về cho Frontend hiển thị hoặc tải file:
-     * - Nếu key bắt đầu bằng "public/" -> ghép thẳng link tĩnh (nhanh, cache được trên trình duyệt)
-     * - Nếu key bắt đầu bằng "private/" -> tự động ký Presigned GET URL có thời hạn
-     */
     public String resolveReadUrl(String objectKey) {
         if (objectKey == null || objectKey.isBlank()) {
             return null;
@@ -101,16 +89,10 @@ public class StorageService {
         return createPresignedGetUrl(objectKey, null);
     }
 
-    /**
-     * 4. Tạo link tải file gốc có ép trình duyệt bật hộp thoại Save As (Content-Disposition: attachment)
-     */
     public String generateDownloadOriginalUrl(String objectKey, String downloadFileName) {
         return createPresignedGetUrl(objectKey, "attachment; filename=\"" + downloadFileName + "\"");
     }
 
-    /**
-     * 5. Kiểm tra file đã thực sự được FE đẩy lên R2/MinIO chưa (Dùng trong API /confirm-upload)
-     */
     public boolean exists(String objectKey) {
         try {
             s3Client.headObject(HeadObjectRequest.builder()
@@ -123,9 +105,6 @@ public class StorageService {
         }
     }
 
-    /**
-     * 6. Đọc mảng byte của ảnh preview từ Storage để đưa vào Tầng 1 Scan QC (OpenCV Laplacian/Histogram)
-     */
     public byte[] downloadBytes(String objectKey) {
         try {
             ResponseBytes<GetObjectResponse> objectBytes = s3Client.getObjectAsBytes(
@@ -142,9 +121,6 @@ public class StorageService {
         }
     }
 
-    // =========================================================================
-    // PRIVATE HELPERS
-    // =========================================================================
     private void validateFile(StorageCategory category, String fileName, String contentType, long fileSizeBytes) {
         if (contentType == null || !category.getAllowedContentTypes().contains(contentType.toLowerCase())) {
             throw ArchiveStorageException.unsupportedFormat(contentType);
