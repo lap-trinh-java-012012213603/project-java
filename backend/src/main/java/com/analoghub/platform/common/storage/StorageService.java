@@ -1,4 +1,4 @@
-package com.analoghub.platform.common.storage;
+﻿package com.analoghub.platform.common.storage;
 
 import com.analoghub.platform.common.exception.ArchiveStorageException;
 import lombok.RequiredArgsConstructor;
@@ -57,7 +57,7 @@ public class StorageService {
 
     /**
      * 2. Dùng riêng cho Film Lab khi upload 36 kiểu ảnh scan của 1 cuộn phim (Multi-tenant isolation)
-     * Kết quả key dạng: private/tenants/{labId}/rolls/{rollId}/frames/01_original.jpg
+     * Kết quả key dạng: private/tenants/{labId}/orders/{orderId}/rolls/{rollId}/frames/01_original.jpg
      */
     public PresignedUploadResult generateRollFrameUploadUrl(
             StorageCategory frameCategory, // ROLL_SCAN_THUMB, ROLL_SCAN_PREVIEW, hoặc ROLL_SCAN_ORIGINAL
@@ -78,7 +78,7 @@ public class StorageService {
         };
         String ext = extractExtension(originalFileName, contentType);
 
-        String objectKey = String.format("tenants/%s/orders/%s/rolls/%s/%02d_%s%s",
+        String objectKey = String.format("private/tenants/%s/orders/%s/rolls/%s/frames/%02d_%s%s",
                 labId, orderId, rollId, frameNumber, variant, ext
         );
 
