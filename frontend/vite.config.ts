@@ -4,6 +4,9 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig(({ isSsrBuild }) => ({
+  define: {
+    global: "globalThis",
+  },
   plugins: [
     tailwindcss(),
     !process.env.VITEST && reactRouter(),
