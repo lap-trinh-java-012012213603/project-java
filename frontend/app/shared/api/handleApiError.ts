@@ -13,6 +13,10 @@ const ERROR_MESSAGE_MAP: Record<string, string> = {
   IAM_REFRESH_TOKEN_REUSE_DETECTED:
     "Cảnh báo bảo mật: Phiên truy cập bị nghi ngờ đã bị đánh cắp.",
   SEC_ACCOUNT_SUSPENDED: "Tài khoản của bạn hiện đang bị tạm khóa hoặc đình chỉ.",
+  IAM_ACCOUNT_TEMP_LOCKED:
+    "Tài khoản tạm thời bị khóa 15 phút do nhập sai mật khẩu quá 5 lần liên tiếp.",
+  IAM_GOOGLE_TOKEN_INVALID:
+    "Google ID Token không hợp lệ, đã hết hạn hoặc không thuộc ứng dụng AnalogHub.",
 
   // Lỗi Vận hành & Booking
   LAB_CAPACITY_EXCEEDED: "Phòng Lab đã đạt giới hạn công suất nhận phim trong ngày.",

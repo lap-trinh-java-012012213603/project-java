@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Bot, Camera, Film, Search, Sparkles } from "lucide-react";
+import { Bot, Camera, Film, LogIn, LogOut, Search, Sparkles, UserPlus } from "lucide-react";
+import { Link } from "react-router";
 import type { Route } from "./+types/home";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
 import { Drawer } from "@/shared/components/ui/Drawer";
 import { Input } from "@/shared/components/ui/Input";
 import { Modal } from "@/shared/components/ui/Modal";
+import { useAuthStore } from "@/shared/stores/useAuthStore";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -22,10 +24,52 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const { isAuthenticated, user, logout } = useAuthStore();
 
   return (
     <main className="min-h-screen bg-darkroom-950 text-gray-100 film-grain-bg">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-12">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
+        {/* Top Auth Bar */}
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-[var(--radius-film)] bg-kodak-amber text-darkroom-950 font-black flex items-center justify-center text-sm shadow-[var(--shadow-amber-glow)]">
+              AH
+            </div>
+            <span className="font-bold tracking-tight text-base">
+              Analog<span className="text-kodak-amber">Hub</span>
+            </span>
+          </div>
+
+          {isAuthenticated && user ? (
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-gray-300">
+                Xin chào, <strong className="text-kodak-amber">{user.fullName}</strong>
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<LogOut className="w-3.5 h-3.5" />}
+                onClick={() => logout()}
+              >
+                Đăng xuất
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2.5">
+              <Link to="/auth/login">
+                <Button variant="ghost" size="sm" leftIcon={<LogIn className="w-3.5 h-3.5" />}>
+                  Đăng nhập
+                </Button>
+              </Link>
+              <Link to="/auth/register">
+                <Button variant="primary" size="sm" leftIcon={<UserPlus className="w-3.5 h-3.5" />}>
+                  Đăng ký
+                </Button>
+              </Link>
+            </div>
+          )}
+        </header>
+
         {/* Hero Banner */}
         <section className="p-8 bg-darkroom-900 border border-darkroom-800 rounded-[var(--radius-card)] shadow-[var(--shadow-darkroom-lg)] film-sprocket-top space-y-6">
           <div className="flex flex-wrap items-center gap-2 pt-2">
