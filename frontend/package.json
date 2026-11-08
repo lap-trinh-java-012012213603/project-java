@@ -50,12 +50,10 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@types/sockjs-client": "^1.5.4",
-    "@vitejs/plugin-react": "^6.2.1",
     "jsdom": "^26.0.0",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
     "vite": "^8.0.3",
-    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^5.1.0"
   }
 }
