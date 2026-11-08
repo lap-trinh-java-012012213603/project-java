@@ -99,7 +99,19 @@ public class AiModelRouter {
             LlmPromptRequest request,
             Class<T> responseClass
     ) {
-        ModelProvider primaryProvider = aiProperties.resolvePrimaryProvider();
+        return generateStructured(userId, featureType, null, request, responseClass);
+    }
+
+    public <T> StructuredLlmResponse<T> generateStructured(
+            UUID userId,
+            String featureType,
+            ModelProvider preferredProvider,
+            LlmPromptRequest request,
+            Class<T> responseClass
+    ) {
+        ModelProvider primaryProvider = preferredProvider != null
+                ? preferredProvider
+                : aiProperties.resolvePrimaryProvider();
         LlmClient primaryClient = getLlmClient(primaryProvider);
 
         try {
@@ -136,6 +148,16 @@ public class AiModelRouter {
             );
             return fallbackResponse;
         }
+    }
+
+    public String resolveChatModelName(ModelProvider provider) {
+        ModelProvider effective = provider != null ? provider : aiProperties.resolvePrimaryProvider();
+        if (effective == ModelProvider.OPENAI) {
+            String model = aiProperties.getOpenai().getChatModel();
+            return model != null && !model.isBlank() ? model : "gpt-4o-mini";
+        }
+        String model = aiProperties.getGemini().getChatModel();
+        return model != null && !model.isBlank() ? model : "gemini-2.5-flash";
     }
 
     /**
