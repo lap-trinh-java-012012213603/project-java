@@ -1,0 +1,21 @@
+# Quy trình tráng C-41
+
+## Hóa chất First Developer
+
+### Kiểm soát Nhiệt độ
+Dung dịch Developer của quy trình C-41 bắt buộc duy trì ở nhiệt độ 37.8°C (100°F) với dung sai không vượt quá ±0.2°C trong suốt thời gian ngâm tiêu chuẩn là 3 phút 15 giây. Đây là giai đoạn nhạy cảm nhất quyết định mật độ hạt bạc, độ tương phản và sự cân bằng giữa ba lớp nhũ tương nhạy sáng Đỏ (Cyan), Xanh lá (Magenta) và Xanh dương (Yellow). Trong bể điều nhiệt tuần hoàn (Sous-vide hoặc hệ thống minilab Noritsu V30, Fuji FP363SC), cảm biến nhiệt PT100 phải được hiệu chuẩn định kỳ mỗi tuần để đảm bảo dung dịch hiện màu CD-4 phản ứng đồng đều trên toàn bộ chiều dài cuộn film 135 hoặc 120.
+
+Nếu nhiệt độ giảm xuống dưới 37.5°C, cuộn film sẽ bị thiếu tráng (under-developed), dẫn đến hiện tượng bết tối, giảm mật độ vùng shadow và sai lệch cân bằng màu nghiêm trọng (thường ngả xanh lá hoặc tím tái). Ngược lại, nếu nhiệt độ vượt quá 38.1°C, phản ứng khử bạc diễn ra quá nhanh gây hiện tượng quá tráng (over-developed), làm tăng lớp mù nền (base fog), hạt grain nổi thô và cháy gắt vùng sáng cao (highlight). Khi tráng thủ công bằng bình Jobo hoặc Paterson trong bồn nước ấm, kỹ thuật viên cần tráng làm ấm bình (pre-warm) ở 38.0°C trong 2 đến 3 phút trước khi rót hóa chất Developer vào bình.
+
+### Chế độ Lắc đảo và Bù Thời gian
+Chế độ lắc đảo (agitation) trong bước Color Developer phải tuân thủ nhịp độ chuẩn để cung cấp hóa chất tươi đến bề mặt nhũ tương và đẩy sản phẩm phụ Bromide ra ngoài. Với bình tráng tay Paterson, lắc đảo liên tục trong 30 giây đầu tiên, sau đó thực hiện 4 lần đảo bình nhẹ nhàng trong 5 giây vào đầu mỗi 30 giây tiếp theo. Với máy quay Rotary Processor (Jobo CPE-3, CPP-3), tốc độ quay liên tục được thiết lập ở mức 50 đến 75 vòng/phút và cần giảm khoảng 5% đến 8% thời gian nếu không có bước làm ướt trước. Đối với hóa chất C-41 pha sẵn dùng lặp lại trong phòng tối cá nhân, sau mỗi cuộn film 36 kiểu đã tráng, cần cộng bù thêm 4% thời gian tráng (tương đương cộng thêm khoảng 8 giây cho mỗi cuộn tiếp theo) để bù đắp sự suy giảm hoạt tính của tác nhân hiện màu CD-4.
+
+## Quy trình Tẩy bạc Bleach và Định hình Fixer
+
+### Tách riêng Bleach và Fixer so với Blix
+Quy trình C-41 công nghiệp tiêu chuẩn của Kodak Flexicolor sử dụng hai bể hóa chất tách biệt gồm Bleach (Tẩy bạc) và Fixer (Định hình) thay vì gộp chung thành một bước Blix như các bộ kit gia đình. Dung dịch Bleach chứa phức chất Sắt (III) EDTA (Ferric Ammonium EDTA) có nhiệm vụ oxy hóa toàn bộ phần bạc kim loại vừa được tạo ra ở bước Developer trở lại dạng muối bạc hòa tan (Silver Halide), chỉ giữ lại các đám mây thuốc nhuộm màu (Dye Clouds) trong ba lớp nhũ tương. Quá trình Bleach yêu cầu sục khí oxy (aeration) đầy đủ và duy trì ở nhiệt độ 37.8°C ± 1.5°C trong thời gian 4 phút 20 giây đến 6 phút 30 giây tùy nồng độ dung dịch.
+
+Ngay sau bước Bleach, cuộn film được rửa nước trung gian (Wash) 1 phút 05 giây trước khi đưa vào bể Fixer. Dung dịch Fixer chứa Ammonium Thiosulfate sẽ hòa tan hoàn toàn lượng muối bạc đã bị oxy hóa và phần bạc halide chưa phơi sáng còn sót lại, giúp nền film màu cam (orange mask) trở nên trong trẻo hoàn toàn. Thời gian ngâm Fixer tiêu chuẩn là 4 phút 20 giây đến 6 phút 30 giây ở 37.8°C. Nếu bước Bleach hoặc Fixer không đủ thời gian hoặc hóa chất đã bão hòa bạc (hiện tượng Bleach Bypass ngoài ý muốn), âm bản sau khi khô sẽ bị đục, độ bão hòa màu suy giảm, vùng tối bết đen và máy scan không thể sử dụng tính năng khử bụi hồng ngoại Digital ICE do bạc kim loại còn sót lại cản tia hồng ngoại.
+
+### Rửa Nước Cuối và Dung dịch Ổn định Stabilizer
+Sau khi hoàn tất bước Fixer, cuộn film cần được rửa dưới dòng nước chảy đã qua lõi lọc cặn 5 micron ở nhiệt độ 35°C đến 38°C trong ít nhất 3 phút 15 giây để loại bỏ triệt để muối Thiosulfate. Bước cuối cùng bắt buộc trong quy trình C-41 là ngâm trong dung dịch Final Rinse hoặc Stabilizer trong 1 phút 05 giây ở nhiệt độ phòng hoặc 35°C. Dung dịch này chứa chất hoạt động bề mặt chống đọng giọt nước (như Photo-Flo) kết hợp với hợp chất diệt nấm khuẩn và ổn định phân tử màu (biocide/stabilizer), giúp bảo vệ các hạt thuốc nhuộm hữu cơ không bị phai màu theo thời gian và giúp film khô nhanh trong tủ sấy không bụi ở nhiệt độ không vượt quá 45°C.
