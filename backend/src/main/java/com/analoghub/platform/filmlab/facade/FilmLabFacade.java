@@ -1,5 +1,10 @@
 package com.analoghub.platform.filmlab.facade;
 
 public interface FilmLabFacade {
-    // Định nghĩa các phương thức giao tiếp cốt lõi
+
+    boolean reserveCapacity(Long labId, int rollCount);
+
+    void releaseCapacity(Long labId, int rollCount);
+
+    void recordOrderMetrics(Long labId, int rollCount);
 }
