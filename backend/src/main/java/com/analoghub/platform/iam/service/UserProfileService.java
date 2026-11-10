@@ -1,9 +1,13 @@
 package com.analoghub.platform.iam.service;
 
+import com.analoghub.platform.common.exception.ArchiveStorageException;
 import com.analoghub.platform.common.exception.BusinessException;
 import com.analoghub.platform.common.exception.ErrorCode;
+import com.analoghub.platform.common.storage.StorageCategory;
 import com.analoghub.platform.common.storage.StorageService;
 import com.analoghub.platform.iam.domain.User;
+import com.analoghub.platform.iam.dto.PresignAvatarUploadRequest;
+import com.analoghub.platform.iam.dto.PresignedAvatarUploadResponse;
 import com.analoghub.platform.iam.dto.RoleCode;
 import com.analoghub.platform.iam.dto.StylePreferencesDto;
 import com.analoghub.platform.iam.dto.UpdateUserProfileRequest;
@@ -16,8 +20,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import tools.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -68,6 +74,70 @@ public class UserProfileService {
     }
 
     /**
+     * Uploads a user avatar image directly to S3/MinIO, updates {@code user.avatarKey} in PostgreSQL,
+     * evicts Redis profile caches, and returns the updated {@link UserProfileDto} in 1 single API call.
+     */
+    @Transactional
+    public UserProfileDto uploadMyAvatar(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException(
+                    ErrorCode.VALIDATION_ERROR,
+                    "Vui lòng chọn file ảnh đại diện hợp lệ."
+            );
+        }
+
+        UUID currentUserId = SecurityContextUtils.getRequiredCurrentUserId();
+        User user = userRepository.findByIdForUpdate(currentUserId)
+                .or(() -> userRepository.findByIdAndDeletedAtIsNull(currentUserId))
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.USER_NOT_FOUND,
+                        "Không tìm thấy hồ sơ người dùng hoặc tài khoản đã bị vô hiệu hóa."
+                ));
+
+        byte[] fileBytes;
+        try {
+            fileBytes = file.getBytes();
+        } catch (IOException ex) {
+            throw ArchiveStorageException.presignFailed(ex);
+        }
+
+        String objectKey = storageService.uploadPublicFile(
+                StorageCategory.AVATAR,
+                currentUserId,
+                file.getOriginalFilename(),
+                file.getContentType(),
+                fileBytes
+        );
+
+        user.setAvatarKey(objectKey);
+        user = userRepository.saveAndFlush(user);
+        evictUserProfileCache(currentUserId);
+
+        Set<RoleCode> roles = resolveUserRoles(currentUserId);
+        return toUserProfileDto(user, roles);
+    }
+
+    /**
+     * Generates a Presigned PUT URL for uploading a public user avatar image into {@code public/avatars/{userId}/...}.
+     */
+    public PresignedAvatarUploadResponse presignAvatarUpload(PresignAvatarUploadRequest request) {
+        UUID currentUserId = SecurityContextUtils.getRequiredCurrentUserId();
+        StorageService.PresignedUploadResult result = storageService.generatePublicUploadUrl(
+                StorageCategory.AVATAR,
+                currentUserId,
+                request.fileName(),
+                request.contentType(),
+                request.fileSizeBytes()
+        );
+        return new PresignedAvatarUploadResponse(
+                result.objectKey(),
+                result.uploadPutUrl(),
+                storageService.resolveReadUrl(result.objectKey()),
+                result.expiresInSeconds()
+        );
+    }
+
+    /**
      * API 4.8: Updates current user's profile ({@code fullName}, {@code phoneNumber}, {@code avatarKey},
      * {@code stylePreferences}) and evicts both {@code iam:user_profile:{userId}} and
      * {@code ai:recsys:labs:{userId}} Redis caches.
@@ -95,7 +165,7 @@ public class UserProfileService {
         }
 
         user.setFullName(request.fullName().trim());
-        if (request.avatarKey() != null) {
+        if (request.avatarKey() != null && !request.avatarKey().isBlank()) {
             user.setAvatarKey(request.avatarKey().trim());
         }
         if (request.stylePreferences() != null) {

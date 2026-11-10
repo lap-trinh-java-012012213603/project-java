@@ -72,16 +72,16 @@ export default function OAuth2CallbackPage() {
 
   if (callbackError) {
     return (
-      <div className="space-y-5 text-center py-2">
-        <div className="w-12 h-12 mx-auto rounded-full bg-safelight-subtle border border-safelight-red/40 flex items-center justify-center text-safelight-red">
+      <div className="w-full max-w-md bg-white border border-[#E6E4E0] rounded-2xl shadow-lg p-8 space-y-5 text-center">
+        <div className="w-12 h-12 mx-auto rounded-full bg-[#FFF1F2] border border-[#FECDD3] flex items-center justify-center text-[#E11D48]">
           <AlertTriangle className="w-6 h-6" />
         </div>
         <div className="space-y-1.5">
-          <h1 className="text-lg font-bold text-gray-100">Xác Thực Google Thất Bại</h1>
-          <p className="text-xs text-gray-400">{callbackError}</p>
+          <h1 className="text-lg font-extrabold text-[#111111]">Xác Thực Google Thất Bại</h1>
+          <p className="text-xs text-stone-500">{callbackError}</p>
         </div>
         <Link to="/auth/login" className="block">
-          <Button variant="secondary" className="w-full">
+          <Button variant="primary" className="w-full">
             Quay lại màn hình đăng nhập
           </Button>
         </Link>
@@ -90,14 +90,14 @@ export default function OAuth2CallbackPage() {
   }
 
   return (
-    <div className="py-8 flex flex-col items-center justify-center text-center space-y-4">
-      <Loader2 className="w-8 h-8 text-kodak-amber animate-spin" />
+    <div className="w-full max-w-md bg-white border border-[#E6E4E0] rounded-2xl shadow-lg p-8 flex flex-col items-center justify-center text-center space-y-4">
+      <Loader2 className="w-8 h-8 text-[#D97706] animate-spin" />
       <div className="space-y-1">
-        <h1 className="text-base font-semibold text-gray-100">
+        <h1 className="text-base font-bold text-[#111111]">
           Đang xác thực tài khoản Google...
         </h1>
-        <p className="text-xs text-gray-400">
-          Vui lòng đợi giây lát trong khi buồng tối khởi tạo phiên làm việc bảo mật.
+        <p className="text-xs text-stone-500">
+          Vui lòng đợi giây lát trong khi hệ thống khởi tạo phiên làm việc bảo mật.
         </p>
       </div>
     </div>

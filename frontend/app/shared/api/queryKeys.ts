@@ -1,4 +1,13 @@
 export const queryKeys = {
+  // 0. Phân hệ Định danh & Hồ sơ Người dùng (IAM)
+  iam: {
+    all: ["iam"] as const,
+    profile: () => [...queryKeys.iam.all, "profile"] as const,
+    addresses: () => [...queryKeys.iam.all, "addresses"] as const,
+    roleApplications: (status?: string) =>
+      [...queryKeys.iam.all, "roleApplications", status] as const,
+  },
+
   // 1. Phân hệ Khách hàng & Lab
   labs: {
     all: ["labs"] as const,

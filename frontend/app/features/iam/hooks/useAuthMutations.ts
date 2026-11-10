@@ -3,6 +3,8 @@ import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { iamApi, persistAuthSession } from "../services/iamApi";
 import type {
   AuthTokenResponse,
+  ChangePasswordRequest,
+  ChangePasswordResponse,
   GoogleOAuth2LoginRequest,
   LoginRequest,
   RegisterUserRequest,
@@ -40,13 +42,27 @@ export function useGoogleLoginMutation(onSuccessCallback?: (response: AuthTokenR
 
 export function useLogoutMutation(onSettledCallback?: () => void) {
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (options?: { logoutAllDevices?: boolean }) => {
       const refreshToken = useAuthStore.getState().refreshToken;
-      return iamApi.logout({ refreshToken });
+      return iamApi.logout({
+        refreshToken,
+        logoutAllDevices: options?.logoutAllDevices ?? false,
+      });
     },
     onSettled: () => {
       useAuthStore.getState().logout();
       onSettledCallback?.();
+    },
+  });
+}
+
+export function useChangePasswordMutation(
+  onSuccessCallback?: (response: ChangePasswordResponse) => void
+) {
+  return useMutation({
+    mutationFn: (payload: ChangePasswordRequest) => iamApi.changePassword(payload),
+    onSuccess: (response) => {
+      onSuccessCallback?.(response);
     },
   });
 }

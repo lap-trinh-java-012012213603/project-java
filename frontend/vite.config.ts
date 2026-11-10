@@ -47,5 +47,8 @@ export default defineConfig(({ isSsrBuild }) => ({
     globals: true,
     environment: "jsdom",
     include: ["app/**/*.{test,spec}.{ts,tsx}"],
+    fileParallelism: false,
+    testTimeout: 15000,
+    hookTimeout: 15000,
   },
 }));

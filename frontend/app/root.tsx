@@ -22,20 +22,20 @@ export const links: Route.LinksFunction = () => [
   },
   {
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,400..800;1,400..800&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap",
   },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi" className="dark">
+    <html lang="vi" className="light">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
       </head>
-      <body className="min-h-screen bg-darkroom-950 text-gray-100 antialiased font-sans selection:bg-kodak-amber selection:text-darkroom-950">
+      <body className="min-h-screen bg-[#FAF8F5] text-[#111111] antialiased font-sans selection:bg-amber-100 selection:text-amber-900">
         <RootLayout>{children}</RootLayout>
         <ScrollRestoration />
         <Scripts />
@@ -57,7 +57,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
     message = error.status === 404 ? "404" : `Lỗi ${error.status}`;
     details =
       error.status === 404
-        ? "Trang bạn tìm kiếm không tồn tại trong buồng tối AnalogHub."
+        ? "Trang bạn tìm kiếm không tồn tại trên hệ thống AnalogHub."
         : error.statusText || details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;
@@ -65,15 +65,16 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-6 bg-darkroom-950 text-gray-100 film-grain-bg">
-      <div className="max-w-xl w-full p-6 bg-darkroom-900 border border-darkroom-800 rounded-[var(--radius-card)] shadow-[var(--shadow-darkroom-lg)] space-y-4">
-        <span className="inline-block px-2.5 py-0.5 text-xs font-mono uppercase rounded-[var(--radius-film)] bg-safelight-subtle text-safelight-red border border-safelight-red/30">
-          Darkroom Alert
+    <main className="min-h-screen flex items-center justify-center p-6 bg-[#FAF8F5] text-[#111111]">
+      <div className="max-w-xl w-full p-8 bg-white border border-[#E6E4E0] rounded-2xl shadow-lg space-y-4">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold uppercase rounded-full bg-[#FFF1F2] text-[#E11D48] border border-rose-200">
+          <span className="w-2 h-2 rounded-full bg-[#E11D48]" />
+          Thông báo hệ thống
         </span>
-        <h1 className="text-3xl font-bold font-mono text-kodak-amber">{message}</h1>
-        <p className="text-sm text-gray-300">{details}</p>
+        <h1 className="text-3xl font-extrabold tracking-tight text-[#111111]">{message}</h1>
+        <p className="text-sm text-stone-600">{details}</p>
         {stack && (
-          <pre className="w-full p-4 overflow-x-auto text-xs font-mono bg-darkroom-950 border border-darkroom-800 rounded-[var(--radius-film)] text-gray-400">
+          <pre className="w-full p-4 overflow-x-auto text-xs font-mono bg-stone-50 border border-stone-200 rounded-xl text-stone-700">
             <code>{stack}</code>
           </pre>
         )}

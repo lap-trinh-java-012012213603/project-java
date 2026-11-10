@@ -9,8 +9,8 @@ import { cn } from "@/shared/utils/cn";
 
 describe("FE-C03 Shared UI Primitives & cn utility", () => {
   it("merges conflicting Tailwind classes cleanly via cn()", () => {
-    expect(cn("px-2 py-1 bg-darkroom-900", false && "hidden", "px-4 bg-kodak-amber")).toBe(
-      "py-1 px-4 bg-kodak-amber"
+    expect(cn("px-2 py-1 bg-white", false && "hidden", "px-4 bg-amber-50")).toBe(
+      "py-1 px-4 bg-amber-50"
     );
   });
 
@@ -23,7 +23,7 @@ describe("FE-C03 Shared UI Primitives & cn utility", () => {
     );
 
     const btn = screen.getByRole("button", { name: "Đặt Tráng Scan" });
-    expect(btn.className).toContain("bg-kodak-amber");
+    expect(btn.className).toContain("bg-[#111111]");
     fireEvent.click(btn);
     expect(onClick).toHaveBeenCalledTimes(1);
 
@@ -65,7 +65,7 @@ describe("FE-C03 Shared UI Primitives & cn utility", () => {
       </div>
     );
 
-    expect(screen.getByText("135mm").className).toContain("text-kodak-amber");
+    expect(screen.getByText("135mm").className).toContain("text-kodak-gold");
     expect(screen.getByText("C-41").className).toContain("text-fuji-emerald");
   });
 
@@ -98,36 +98,30 @@ describe("FE-C03 Shared UI Primitives & cn utility", () => {
     const cancelBtn = screen.getByRole("button", { name: "Hủy bỏ" });
     const confirmBtn = screen.getByRole("button", { name: "Xác nhận" });
 
-    // Mở Modal -> tiêu điểm tự động đặt vào phần tử focusable đầu tiên bên trong Modal
     expect(document.activeElement).toBe(closeBtn);
 
-    // Đứng ở phần tử cuối cùng bấm Tab -> vòng ngược về phần tử đầu tiên (Focus Trap)
     confirmBtn.focus();
     expect(document.activeElement).toBe(confirmBtn);
     fireEvent.keyDown(window, { key: "Tab", shiftKey: false });
     expect(document.activeElement).toBe(closeBtn);
 
-    // Đứng ở phần tử đầu tiên bấm Shift+Tab -> vòng xuống phần tử cuối cùng (Focus Trap)
     closeBtn.focus();
     fireEvent.keyDown(window, { key: "Tab", shiftKey: true });
     expect(document.activeElement).toBe(confirmBtn);
 
-    // Kiểm tra các phần tử bên trong vẫn tồn tại đầy đủ
     expect(noteInput).toBeTruthy();
     expect(cancelBtn).toBeTruthy();
 
-    // Bấm phím Escape -> gọi hàm onClose
     fireEvent.keyDown(window, { key: "Escape" });
     expect(onClose).toHaveBeenCalledTimes(1);
 
-    // Click backdrop -> gọi hàm onClose
     fireEvent.click(screen.getByTestId("modal-backdrop"));
     expect(onClose).toHaveBeenCalledTimes(2);
   });
 
   it("preserves focus inside Modal input across parent re-renders with inline onClose", () => {
     const { rerender } = render(
-      <Modal isOpen onClose={() => {}} title="Ghi chú buồng tối">
+      <Modal isOpen onClose={() => {}} title="Ghi chú kỹ thuật">
         <input aria-label="Ghi chú Push/Pull" value="" onChange={() => {}} />
       </Modal>
     );
@@ -137,7 +131,7 @@ describe("FE-C03 Shared UI Primitives & cn utility", () => {
     expect(document.activeElement).toBe(input);
 
     rerender(
-      <Modal isOpen onClose={() => {}} title="Ghi chú buồng tối">
+      <Modal isOpen onClose={() => {}} title="Ghi chú kỹ thuật">
         <input aria-label="Ghi chú Push/Pull" value="Push +1" onChange={() => {}} />
       </Modal>
     );

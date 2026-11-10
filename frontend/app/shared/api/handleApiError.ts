@@ -7,6 +7,8 @@ const ERROR_MESSAGE_MAP: Record<string, string> = {
   SEC_TOKEN_EXPIRED: "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.",
   SEC_TOKEN_MISSING: "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.",
   FORBIDDEN: "Bạn không có quyền thực hiện thao tác này.",
+  ACCESS_DENIED: "Bạn không có quyền thực hiện thao tác này.",
+  SEC_RESOURCE_NOT_OWNED: "Bạn không có quyền chỉnh sửa tài nguyên thuộc sở hữu của người dùng khác.",
   LAB_TENANT_ACCESS_DENIED: "Bạn không có quyền thao tác trên phòng Lab này.",
   SEC_LAB_TENANT_FORBIDDEN: "Bạn không có quyền thao tác trên phòng Lab này.",
   TOKEN_REUSE_DETECTED: "Cảnh báo bảo mật: Phiên truy cập bị nghi ngờ đã bị đánh cắp.",
@@ -17,6 +19,19 @@ const ERROR_MESSAGE_MAP: Record<string, string> = {
     "Tài khoản tạm thời bị khóa 15 phút do nhập sai mật khẩu quá 5 lần liên tiếp.",
   IAM_GOOGLE_TOKEN_INVALID:
     "Google ID Token không hợp lệ, đã hết hạn hoặc không thuộc ứng dụng AnalogHub.",
+
+  // Lỗi Hồ sơ, Địa chỉ & Nâng cấp Vai trò (IAM)
+  USER_NOT_FOUND: "Không tìm thấy hồ sơ người dùng hoặc tài khoản đã bị vô hiệu hóa.",
+  IAM_USER_NOT_FOUND: "Không tìm thấy hồ sơ người dùng hoặc tài khoản đã bị vô hiệu hóa.",
+  PHONE_ALREADY_EXISTS: "Số điện thoại này đã được liên kết với một tài khoản khác trên hệ thống.",
+  IAM_PHONE_ALREADY_EXISTS:
+    "Số điện thoại này đã được liên kết với một tài khoản khác trên hệ thống.",
+  IAM_ADDRESS_LIMIT_EXCEEDED:
+    "Sổ địa chỉ đã đạt giới hạn tối đa 10 địa chỉ. Vui lòng xóa bớt địa chỉ cũ trước khi thêm mới.",
+  IAM_ADDRESS_NOT_FOUND: "Không tìm thấy địa chỉ hoặc địa chỉ đã bị xóa.",
+  IAM_ROLE_ALREADY_GRANTED: "Bạn đã sở hữu vai trò này trên hệ thống.",
+  IAM_ROLE_APPLICATION_ALREADY_PENDING:
+    "Bạn đang có một hồ sơ xin nâng cấp vai trò này ở trạng thái chờ duyệt (PENDING).",
 
   // Lỗi Vận hành & Booking
   LAB_CAPACITY_EXCEEDED: "Phòng Lab đã đạt giới hạn công suất nhận phim trong ngày.",

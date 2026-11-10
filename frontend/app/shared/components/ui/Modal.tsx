@@ -113,14 +113,12 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop mờ */}
       <div
         data-testid="modal-backdrop"
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-stone-900/40 backdrop-blur-xs transition-opacity"
         onClick={onClose}
       />
 
-      {/* Hộp Modal */}
       <div
         ref={modalRef}
         role="dialog"
@@ -129,20 +127,19 @@ export const Modal: React.FC<ModalProps> = ({
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
         className={cn(
-          "relative w-full bg-darkroom-900 border border-darkroom-750 rounded-[var(--radius-modal)] shadow-[var(--shadow-darkroom-lg)] overflow-hidden z-10 flex flex-col max-h-[90vh] focus:outline-none",
+          "relative w-full bg-white border border-[#E6E4E0] rounded-2xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh] focus:outline-none text-[#111111]",
           maxWidthClasses[maxWidth]
         )}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-darkroom-800">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200 bg-white">
           <div>
             {title && (
-              <h3 id={titleId} className="text-base font-semibold text-gray-100">
+              <h3 id={titleId} className="text-base font-bold text-[#111111]">
                 {title}
               </h3>
             )}
             {description && (
-              <p id={descriptionId} className="text-xs text-gray-400 mt-0.5">
+              <p id={descriptionId} className="text-xs text-stone-500 mt-0.5">
                 {description}
               </p>
             )}
@@ -151,18 +148,16 @@ export const Modal: React.FC<ModalProps> = ({
             type="button"
             aria-label="Đóng hộp thoại"
             onClick={onClose}
-            className="text-gray-400 hover:text-white p-1 rounded-md hover:bg-darkroom-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kodak-amber"
+            className="text-stone-400 hover:text-stone-900 p-1.5 rounded-lg hover:bg-stone-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D97706] cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Body (Có scroll riêng nếu nội dung dài) */}
         <div className="p-6 overflow-y-auto flex-1">{children}</div>
 
-        {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-6 py-3.5 bg-darkroom-950 border-t border-darkroom-800">
+          <div className="flex items-center justify-end gap-3 px-6 py-3.5 bg-[#FAF8F5] border-t border-stone-200">
             {footer}
           </div>
         )}

@@ -1,97 +1,87 @@
 @import "tailwindcss";
 
 @theme {
-  /* Bảng màu Nền Buồng Tối */
-  --color-darkroom-950: #0a0a0a;
-  --color-darkroom-900: #121212;
-  --color-darkroom-800: #1c1c1c;
-  --color-darkroom-750: #242424;
-  --color-darkroom-700: #2d2d2d;
-  --color-darkroom-600: #3f3f3f;
+  /* Bảng màu Sáng Tối Giản & Giấy Ảnh Ấm (Clean Light & Warm Paper) */
+  --color-paper-50: #faf8f5;
+  --color-paper-100: #f7f4ef;
+  --color-paper-200: #ebe7df;
+  --color-paper-border: #e6e4e0;
+  --color-cream-card: #fffdf9;
 
-  /* Điểm nhấn Vàng Phim Kodak */
+  /* Chữ & Nút Hành Động Chính (Charcoal / Pure Black) */
+  --color-ink-950: #111111;
+  --color-ink-900: #1c1917;
+  --color-ink-700: #44403c;
+  --color-ink-500: #78716c;
+  --color-ink-400: #a8a29e;
+
+  /* Điểm nhấn Vàng Phim Ấm (Warm Film Amber) */
   --color-kodak-amber: #f59e0b;
   --color-kodak-gold: #d97706;
-  --color-kodak-light: #fbbf24;
-  --color-kodak-subtle: rgba(245, 158, 11, 0.12);
+  --color-kodak-deep: #b45309;
+  --color-kodak-light: #fef3c7;
+  --color-kodak-subtle: #fff7ed;
 
-  /* Đèn Đỏ An Toàn Buồng Tối */
-  --color-safelight-red: #ef4444;
-  --color-safelight-deep: #dc2626;
-  --color-safelight-subtle: rgba(239, 68, 68, 0.12);
+  /* Điểm nhấn Đỏ Chấm Máy Phim (Leica Crimson Red) */
+  --color-leica-red: #e11d48;
+  --color-safelight-red: #e11d48;
+  --color-safelight-deep: #be123c;
+  --color-safelight-subtle: #fff1f2;
 
-  /* Xanh Lá Fuji Film */
-  --color-fuji-emerald: #10b981;
-  --color-fuji-deep: #059669;
-  --color-fuji-subtle: rgba(16, 185, 129, 0.12);
+  /* Điểm nhấn Xanh Lá Tín Hiệu (Fuji Emerald Green) */
+  --color-fuji-emerald: #059669;
+  --color-fuji-bright: #10b981;
+  --color-fuji-deep: #047857;
+  --color-fuji-subtle: #ecfdf5;
 
-  /* Giấy Rọi Sepia */
-  --color-sepia-surface: #fdfbf7;
-  --color-sepia-border: #e7dfd5;
-  --color-sepia-text: #4a3e35;
+  /* Điểm nhấn Xanh Indigo Lưu Trữ */
+  --color-archive-indigo: #4f46e5;
+  --color-archive-subtle: #eef2ff;
 
   /* Typography */
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", "Courier New", monospace;
 
   /* Radii */
-  --radius-film: 4px;
-  --radius-card: 10px;
+  --radius-film: 8px;
+  --radius-card: 16px;
   --radius-modal: 16px;
 
   /* Box Shadows */
-  --shadow-darkroom-sm: 0 1px 2px rgba(0, 0, 0, 0.6);
-  --shadow-darkroom-md: 0 4px 12px rgba(0, 0, 0, 0.7);
-  --shadow-darkroom-lg: 0 12px 32px rgba(0, 0, 0, 0.85);
-  --shadow-amber-glow: 0 0 16px rgba(245, 158, 11, 0.35);
-  --shadow-red-glow: 0 0 16px rgba(239, 68, 68, 0.35);
+  --shadow-card-sm: 0 1px 3px rgba(17, 17, 17, 0.04), 0 1px 2px rgba(17, 17, 17, 0.02);
+  --shadow-card-md: 0 4px 16px -2px rgba(28, 25, 23, 0.06), 0 2px 6px -1px rgba(28, 25, 23, 0.04);
+  --shadow-card-lg: 0 12px 32px -4px rgba(28, 25, 23, 0.08), 0 4px 12px -2px rgba(28, 25, 23, 0.04);
+  --shadow-amber-ring: 0 0 0 4px rgba(254, 243, 199, 0.85);
 }
 
-/* Base Styles */
+/* Base Styles — Clean Light Mode */
 html,
 body {
-  @apply bg-darkroom-950 text-gray-100 antialiased font-sans selection:bg-kodak-amber selection:text-darkroom-950;
-  color-scheme: dark;
+  background-color: #faf8f5;
+  color: #111111;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: light;
 }
 
-/* Lớp Phủ Hạt Phim Cổ Điển (Film Grain Texture) */
-.film-grain-bg {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 0);
-  background-size: 20px 20px;
+::selection {
+  background-color: #fef3c7;
+  color: #92400e;
 }
 
-/* Viền Đục Lỗ Cuộn Phim 35mm (Film Sprocket Effect) */
-.film-sprocket-top {
-  position: relative;
-}
-.film-sprocket-top::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 8px;
-  background-image: repeating-linear-gradient(
-    90deg,
-    transparent,
-    transparent 12px,
-    rgba(255, 255, 255, 0.15) 12px,
-    rgba(255, 255, 255, 0.15) 18px
-  );
-}
-
-/* Custom Scrollbar Buồng Tối */
+/* Custom Scrollbar Thanh Mảnh Sáng Sủa */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #121212;
+  background: #f5f3f0;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2d2d2d;
-  border-radius: 3px;
+  background: #d6d3d1;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #f59e0b;
+  background: #d97706;
 }

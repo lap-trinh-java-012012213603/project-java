@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -15,6 +16,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 
 import java.time.Duration;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @Service
@@ -24,6 +26,7 @@ public class StorageService {
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
     private final StorageProperties props;
+    private final AtomicBoolean publicPolicyConfigured = new AtomicBoolean(false);
 
     public record PresignedUploadResult(
             String objectKey,
@@ -39,6 +42,7 @@ public class StorageService {
             long fileSizeBytes
     ) {
         validateFile(category, originalFileName, contentType, fileSizeBytes);
+        ensurePublicReadPolicyQuietly();
 
         String ext = extractExtension(originalFileName, contentType);
         String objectKey = String.format("%s/%s/%s%s",
@@ -50,6 +54,42 @@ public class StorageService {
 
         String putUrl = createPresignedPutUrl(objectKey, contentType);
         return new PresignedUploadResult(objectKey, putUrl, props.getPresignPutExpirationMinutes() * 60);
+    }
+
+    /**
+     * Directly uploads a public media file (e.g., User Avatar) to S3/MinIO in a single step and returns its objectKey.
+     */
+    public String uploadPublicFile(
+            StorageCategory category,
+            UUID ownerOrEntityId,
+            String originalFileName,
+            String contentType,
+            byte[] fileBytes
+    ) {
+        long size = fileBytes != null ? fileBytes.length : 0L;
+        validateFile(category, originalFileName, contentType, size);
+        ensurePublicReadPolicyQuietly();
+
+        String ext = extractExtension(originalFileName, contentType);
+        String objectKey = String.format("%s/%s/%s%s",
+                category.getBasePrefix(),
+                ownerOrEntityId,
+                UUID.randomUUID(),
+                ext
+        );
+
+        try {
+            PutObjectRequest putRequest = PutObjectRequest.builder()
+                    .bucket(props.getBucketName())
+                    .key(objectKey)
+                    .contentType(contentType)
+                    .build();
+            s3Client.putObject(putRequest, RequestBody.fromBytes(fileBytes));
+            return objectKey;
+        } catch (Exception e) {
+            log.error("Failed to upload public file directly to S3/MinIO for key={}", objectKey, e);
+            throw ArchiveStorageException.presignFailed(e);
+        }
     }
 
     public PresignedUploadResult generateRollFrameUploadUrl(
@@ -83,7 +123,11 @@ public class StorageService {
         if (objectKey == null || objectKey.isBlank()) {
             return null;
         }
+        if (objectKey.startsWith("http://") || objectKey.startsWith("https://")) {
+            return objectKey;
+        }
         if (objectKey.startsWith("public/")) {
+            ensurePublicReadPolicyQuietly();
             return props.getPublicBaseUrl() + "/" + objectKey;
         }
         return createPresignedGetUrl(objectKey, null);
@@ -118,6 +162,25 @@ public class StorageService {
             throw ArchiveStorageException.objectNotFoundOnStorage(objectKey);
         } catch (Exception e) {
             throw ArchiveStorageException.presignFailed(e);
+        }
+    }
+
+    private void ensurePublicReadPolicyQuietly() {
+        if (publicPolicyConfigured.get() || s3Client == null || props == null || props.getBucketName() == null) {
+            return;
+        }
+        try {
+            String bucket = props.getBucketName();
+            String policyJson = """
+                    {"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":["*"]},"Action":["s3:GetObject"],"Resource":["arn:aws:s3:::%s/public/*"]}]}
+                    """.formatted(bucket).trim();
+            s3Client.putBucketPolicy(PutBucketPolicyRequest.builder()
+                    .bucket(bucket)
+                    .policy(policyJson)
+                    .build());
+            publicPolicyConfigured.set(true);
+        } catch (Exception ex) {
+            log.debug("[StorageService] Could not auto-apply public bucket policy: {}", ex.getMessage());
         }
     }
 

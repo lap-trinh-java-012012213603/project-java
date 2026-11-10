@@ -4,32 +4,38 @@ import { cn } from "../../utils/cn";
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
+  labelRight?: React.ReactNode;
   error?: string;
-  helperText?: string;
+  helperText?: React.ReactNode;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, helperText, leftIcon, rightIcon, id, ...props }, ref) => {
+  ({ className, label, labelRight, error, helperText, leftIcon, rightIcon, id, ...props }, ref) => {
     const generatedId = useId();
     const inputId = id || generatedId;
     const messageId = `${inputId}-message`;
 
     return (
       <div className="w-full space-y-1.5">
-        {label && (
-          <label
-            htmlFor={inputId}
-            className="block text-xs font-medium text-gray-300 uppercase tracking-wider"
-          >
-            {label}
-            {props.required && <span className="text-safelight-red ml-1">*</span>}
-          </label>
+        {(label || labelRight) && (
+          <div className="flex items-center justify-between gap-2">
+            {label && (
+              <label
+                htmlFor={inputId}
+                className="block text-xs font-bold text-[#111111] uppercase tracking-wider"
+              >
+                {label}
+                {props.required && <span className="text-[#E11D48] ml-1">*</span>}
+              </label>
+            )}
+            {labelRight && <div>{labelRight}</div>}
+          </div>
         )}
         <div className="relative flex items-center">
           {leftIcon && (
-            <div className="absolute left-3 flex items-center pointer-events-none text-gray-400">
+            <div className="absolute left-3.5 flex items-center pointer-events-none text-stone-400">
               {leftIcon}
             </div>
           )}
@@ -39,27 +45,28 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             aria-invalid={error ? true : undefined}
             aria-describedby={error || helperText ? messageId : undefined}
             className={cn(
-              "w-full h-10 px-3 bg-darkroom-900 border border-darkroom-700 rounded-[var(--radius-film)] text-sm text-gray-100 placeholder-gray-500 transition-colors focus:outline-none focus:border-kodak-amber focus:ring-1 focus:ring-kodak-amber disabled:opacity-50 disabled:bg-darkroom-950",
-              leftIcon && "pl-9",
-              rightIcon && "pr-9",
-              error && "border-safelight-red focus:border-safelight-red focus:ring-safelight-red",
+              "w-full h-11 px-3.5 bg-white border border-stone-300 rounded-xl text-sm text-[#111111] font-medium placeholder-stone-400 transition-all focus:outline-none focus:border-[#D97706] focus:ring-4 focus:ring-amber-100/80 disabled:opacity-60 disabled:bg-stone-100",
+              leftIcon && "pl-10",
+              rightIcon && "pr-11",
+              error &&
+                "border-[#E11D48] focus:border-[#E11D48] focus:ring-rose-100/80 bg-rose-50/20",
               className
             )}
             {...props}
           />
           {rightIcon && (
-            <div className="absolute right-3 flex items-center text-gray-400">
+            <div className="absolute right-3.5 flex items-center text-stone-400">
               {rightIcon}
             </div>
           )}
         </div>
         {error ? (
-          <p id={messageId} className="flex items-center text-xs text-safelight-red gap-1 mt-1">
+          <p id={messageId} className="flex items-center text-xs font-medium text-[#E11D48] gap-1 mt-1">
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
             <span>{error}</span>
           </p>
         ) : helperText ? (
-          <p id={messageId} className="text-xs text-gray-400 mt-1">
+          <p id={messageId} className="text-xs text-stone-500 mt-1">
             {helperText}
           </p>
         ) : null}

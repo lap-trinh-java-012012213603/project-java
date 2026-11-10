@@ -91,6 +91,7 @@ services:
       until aws --endpoint-url http://minio:9000 s3api list-buckets > /dev/null 2>&1; do sleep 1; done;
       aws --endpoint-url http://minio:9000 s3api head-bucket --bucket $${MINIO_BUCKET} 2>/dev/null
       || aws --endpoint-url http://minio:9000 s3api create-bucket --bucket $${MINIO_BUCKET};
+      aws --endpoint-url http://minio:9000 s3api put-bucket-policy --bucket $${MINIO_BUCKET} --policy '{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":[\"*\"]},\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::'\"$${MINIO_BUCKET}\"'/public/*\"]}]}';
       "
 
 volumes:
