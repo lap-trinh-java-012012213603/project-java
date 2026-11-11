@@ -11,5 +11,5 @@ import java.util.UUID;
 public interface ServicePackageRepository extends JpaRepository<ServicePackage, UUID> {
 
     // Lấy danh sách các gói dịch vụ active của một Lab cụ thể
-    List<ServicePackage> findByLabIdAndActiveTrue(UUID labId);
+    List<ServicePackage> findByLabIdAndIsActiveTrue(UUID labId);
 }

@@ -1,50 +1,62 @@
 package com.analoghub.platform.filmlab.service;
 
+import com.analoghub.platform.common.exception.ErrorCode;
+import com.analoghub.platform.common.exception.ResourceNotFoundException;
 import com.analoghub.platform.filmlab.domain.Lab;
-import com.analoghub.platform.filmlab.domain.ServicePackage;
+import com.analoghub.platform.filmlab.dto.LabDetailResponse;
+import com.analoghub.platform.filmlab.event.LabViewedEvent;
+import com.analoghub.platform.filmlab.repository.LabCapacityRuleRepository;
 import com.analoghub.platform.filmlab.repository.LabRepository;
 import com.analoghub.platform.filmlab.repository.ServicePackageRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.time.Duration;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class FilmLabPublicService {
 
     private final LabRepository labRepository;
     private final ServicePackageRepository servicePackageRepository;
+    private final LabCapacityRuleRepository labCapacityRuleRepository;
+    private final ApplicationEventPublisher eventPublisher;
+    private final StringRedisTemplate redisTemplate;
 
-    /**
-     * Lấy thông tin chi tiết của Lab theo slug hoặc id, kèm theo danh sách gói dịch vụ đang hoạt động.
-     */
-    public LabDetailResponse getLabDetailBySlugOrId(String slugOrId) {
+    @Transactional(readOnly = true)
+    public LabDetailResponse getLabDetails(String slugOrId, String viewerIpOrId) {
         Lab lab;
         try {
-            // Thử parse xem có phải UUID không
             UUID labId = UUID.fromString(slugOrId);
-            lab = labRepository.findByIdAndActiveTrue(labId)
-                    .orElseThrow(() -> new RuntimeException("Lab không tồn tại hoặc đã bị khóa: " + slugOrId));
+            lab = labRepository.findById(labId)
+                    // Sửa lại đoạn này, chọn ErrorCode cho phù hợp với project của bạn
+                    .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.RESOURCE_NOT_FOUND));
         } catch (IllegalArgumentException e) {
-            // Nếu không phải UUID thì tìm theo slug
             lab = labRepository.findBySlug(slugOrId)
-                    .filter(Lab::isActive)
-                    .orElseThrow(() -> new RuntimeException("Lab không tồn tại với slug: " + slugOrId));
+                    // Tương tự ở đây
+                    .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.RESOURCE_NOT_FOUND));
         }
 
-        // Lấy danh sách các gói dịch vụ active của lab này
-        List<ServicePackage> servicePackages = servicePackageRepository.findByLabIdAndActiveTrue(lab.getId());
+        publishViewEventWithDebounce(lab.getId(), viewerIpOrId);
 
-        return new LabDetailResponse(lab, servicePackages);
+        return LabDetailResponse.builder()
+                .lab(lab)
+                .packages(servicePackageRepository.findByLabIdAndIsActiveTrue(lab.getId()))
+                .capacities(labCapacityRuleRepository.findByLabId(lab.getId()))
+                .build();
     }
 
-    // Response DTO nội bộ cho service
-    public record LabDetailResponse(
-            Lab lab,
-            List<ServicePackage> servicePackages
-    ) {}
+    private void publishViewEventWithDebounce(UUID labId, String viewerIpOrId) {
+        String redisKey = "lab_view:" + labId + ":" + viewerIpOrId;
+        // Debounce 5 phút bằng Redis để tránh spam view
+        Boolean isNewView = redisTemplate.opsForValue().setIfAbsent(redisKey, "1", Duration.ofMinutes(5));
+
+        if (Boolean.TRUE.equals(isNewView)) {
+            eventPublisher.publishEvent(new LabViewedEvent(labId, viewerIpOrId));
+        }
+    }
 }

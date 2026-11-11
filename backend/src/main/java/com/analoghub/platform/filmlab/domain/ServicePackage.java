@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "service_packages")
+@Table(name = "lab_service_packages")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -23,36 +23,59 @@ public class ServicePackage {
     private UUID id;
 
     @Column(name = "lab_id", nullable = false)
-    private UUID labId; // Khóa ngoại liên kết tới Lab (Multi-tenant isolation)
+    private UUID labId;
 
-    @Column(nullable = false)
-    private String name; // Tên gói dịch vụ (Ví dụ: Scan C41 35mm Standard)
+    @Column(name = "category_code", nullable = false, length = 64)
+    private String categoryCode;
 
-    @Column(columnDefinition = "TEXT")
-    private String description;
+    @Column(name = "name", nullable = false, length = 150)
+    private String name;
 
-    @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal price; // Giá tiền (VND)
+    @Column(name = "film_format", nullable = false, length = 32)
+    private String filmFormat;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "service_type", nullable = false)
-    private ServiceType serviceType; // Loại dịch vụ: DEVELOPMENT, SCANNING, COMBO
+    @Column(name = "process_type", nullable = false, length = 32)
+    private String processType;
 
     @Builder.Default
-    @Column(nullable = false)
-    private boolean active = true;
+    @Column(name = "scan_resolution", nullable = false, length = 32)
+    private String scanResolution = "NONE";
+
+    @Column(name = "unit_price_vnd", nullable = false, precision = 15, scale = 2)
+    private BigDecimal unitPriceVnd;
+
+    @Builder.Default
+    @Column(name = "estimated_hours", nullable = false)
+    private int estimatedHours = 24;
+
+    @Builder.Default
+    @Column(name = "is_active", nullable = false)
+    private boolean isActive = true;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
 
     @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    @Column(name = "created_by")
+    private UUID createdBy;
 
     @UpdateTimestamp
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-    public enum ServiceType {
-        DEVELOPMENT,
-        SCANNING,
-        COMBO
+    @Column(name = "updated_by")
+    private UUID updatedBy;
+
+    @Version
+    @Builder.Default
+    @Column(name = "version", nullable = false)
+    private Long version = 0L;
+
+    // Helper method for Soft Delete
+    public boolean isDeleted() {
+        return this.deletedAt != null;
     }
 }

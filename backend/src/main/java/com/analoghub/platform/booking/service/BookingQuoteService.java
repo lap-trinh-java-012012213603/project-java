@@ -1,59 +1,42 @@
 package com.analoghub.platform.booking.service;
 
+import com.analoghub.platform.booking.dto.BookingQuoteRequest;
+import com.analoghub.platform.booking.dto.BookingQuoteResponse;
 import com.analoghub.platform.filmlab.facade.FilmLabFacade;
-// Import thêm DeliveryFacade nếu đã có module delivery (hoặc tạo interface mock/facade tương ứng)
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.UUID;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 @Service
+@RequiredArgsConstructor
 public class BookingQuoteService {
 
     private final FilmLabFacade filmLabFacade;
-    // private final DeliveryFacade deliveryFacade; // Tích hợp khi cần tính phí ship
+    // private final DeliveryFacade deliveryFacade; // Uncomment nếu đã có DeliveryFacade trong project
 
-    public BookingQuoteService(FilmLabFacade filmLabFacade) {
-        this.filmLabFacade = filmLabFacade;
-    }
+    public BookingQuoteResponse calculateQuote(BookingQuoteRequest request) {
+        // 1. Tạm tính tiền dịch vụ (Ở đây sẽ gọi FilmLabFacade hoặc Repository để lấy snapshot giá các gói dịch vụ)
+        BigDecimal serviceSubtotal = BigDecimal.valueOf(150000); // Giá ví dụ tạm tính
 
-    /**
-     * Xử lý báo giá đơn hàng, tính tổng tiền và SLA trả ảnh dự kiến
-     */
-    public QuoteResponse calculateQuote(QuoteRequest request) {
-        // 1. Lấy snapshot đơn giá và kiểm tra dung lượng từ FilmLabFacade
-        // 2. Gọi DeliveryFacade.estimateShippingFee để tính phí ship (1 hoặc 2 chiều)
-        // 3. Tính toán tổng tiền (totalAmount) và ngày giờ hoàn thành (estimatedCompletionTime)
+        // 2. Tính phí ship qua DeliveryFacade (ví dụ gọi estimateShippingFee)
+        BigDecimal shippingFee = request.isIncludeReturnShipping()
+                ? BigDecimal.valueOf(30000)
+                : BigDecimal.valueOf(15000);
 
-        QuoteResponse response = new QuoteResponse();
-        response.setEstimatedTotal(BigDecimal.ZERO); // Tạm tính
-        response.setEstimatedCompletionTime(LocalDateTime.now().plusDays(3)); // Ví dụ SLA 3 ngày
+        // 3. Tổng tiền
+        BigDecimal totalAmount = serviceSubtotal.add(shippingFee);
 
-        return response;
-    }
+        // 4. Tính thời gian trả ảnh dự kiến dựa trên SLA của lab
+        Instant estimatedTime = Instant.now().plus(48, ChronoUnit.HOURS); // Ví dụ SLA 48 tiếng
 
-    // Các DTO hỗ trợ request/response cho báo giá
-    public static class QuoteRequest {
-        private UUID labId;
-        private UUID customerId;
-        private boolean twoWayShipping; // Phí ship 1 hay 2 chiều
-        // Getters and Setters
-        public UUID getLabId() { return labId; }
-        public void setLabId(UUID labId) { this.labId = labId; }
-        public UUID getCustomerId() { return customerId; }
-        public void setCustomerId(UUID customerId) { this.customerId = customerId; }
-        public boolean isTwoWayShipping() { return twoWayShipping; }
-        public void setTwoWayShipping(boolean twoWayShipping) { this.twoWayShipping = twoWayShipping; }
-    }
-
-    public static class QuoteResponse {
-        private BigDecimal estimatedTotal;
-        private LocalDateTime estimatedCompletionTime;
-        // Getters and Setters
-        public BigDecimal getEstimatedTotal() { return estimatedTotal; }
-        public void setEstimatedTotal(BigDecimal estimatedTotal) { this.estimatedTotal = estimatedTotal; }
-        public LocalDateTime getEstimatedCompletionTime() { return estimatedCompletionTime; }
-        public void setEstimatedCompletionTime(LocalDateTime estimatedCompletionTime) { this.estimatedCompletionTime = estimatedCompletionTime; }
+        return BookingQuoteResponse.builder()
+                .serviceSubtotalVnd(serviceSubtotal)
+                .shippingFeeVnd(shippingFee)
+                .totalAmountVnd(totalAmount)
+                .estimatedCompletionTime(estimatedTime)
+                .build();
     }
 }

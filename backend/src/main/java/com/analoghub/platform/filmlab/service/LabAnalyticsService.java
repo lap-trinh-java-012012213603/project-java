@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID; // Thêm import UUID
+import java.math.BigDecimal;
 
 @Service
 public class LabAnalyticsService {
@@ -51,5 +52,8 @@ public class LabAnalyticsService {
             return 0.0;
         }
         return (double) currentBookedRolls / rule.getMaxDailyRolls() * 100.0;
+    }
+    public void recordDailyMetrics(UUID labId, BigDecimal orderAmount) {
+        // TODO: Logic ghi nhận doanh thu và số lượng đơn hàng vào bảng LabDailyAnalytics theo ngày
     }
 }

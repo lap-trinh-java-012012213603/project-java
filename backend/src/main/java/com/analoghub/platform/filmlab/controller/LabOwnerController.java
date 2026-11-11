@@ -2,61 +2,49 @@ package com.analoghub.platform.filmlab.controller;
 
 import com.analoghub.platform.filmlab.domain.Lab;
 import com.analoghub.platform.filmlab.domain.LabCapacityRule;
+import com.analoghub.platform.filmlab.domain.ServicePackage;
+import com.analoghub.platform.filmlab.dto.ServicePackageRequest;
+import com.analoghub.platform.filmlab.dto.UpdateCapacityRuleRequest;
+import com.analoghub.platform.filmlab.dto.UpdateLabProfileRequest;
 import com.analoghub.platform.filmlab.service.LabOwnerManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/owner/labs")
+@RequestMapping("/api/v1/labs/{labId}/owner")
 @RequiredArgsConstructor
 public class LabOwnerController {
 
     private final LabOwnerManagementService labOwnerManagementService;
 
-    /**
-     * API cập nhật hồ sơ Lab dành cho LabOwner
-     * Endpoint: PUT /api/v1/owner/labs/{labId}/profile
-     */
-    @PutMapping("/{labId}/profile")
+    @PutMapping("/profile")
+    @PreAuthorize("@labTenantGuard.isLabOwner(authentication, #labId)")
     public ResponseEntity<Lab> updateLabProfile(
             @PathVariable UUID labId,
-            @RequestBody UpdateLabProfileRequest request
-    ) {
-        Lab updatedLab = labOwnerManagementService.updateLabProfile(
-                labId,
-                request.name(),
-                request.description(),
-                request.phoneNumber(),
-                request.address()
-        );
+            @RequestBody UpdateLabProfileRequest request) {
+        Lab updatedLab = labOwnerManagementService.updateLabProfile(labId, request);
         return ResponseEntity.ok(updatedLab);
     }
 
-    /**
-     * API cấu hình quy tắc công suất tối đa theo ngày (max_daily_rolls)
-     * Endpoint: PUT /api/v1/owner/labs/{labId}/capacity-rule
-     */
-    @PutMapping("/{labId}/capacity-rule")
-    public ResponseEntity<LabCapacityRule> updateCapacityRule(
+    @PostMapping("/packages")
+    @PreAuthorize("@labTenantGuard.isLabOwner(authentication, #labId)")
+    public ResponseEntity<ServicePackage> addServicePackage(
             @PathVariable UUID labId,
-            @RequestBody UpdateCapacityRuleRequest request
-    ) {
-        LabCapacityRule rule = labOwnerManagementService.updateCapacityRule(labId, request.maxDailyRolls());
-        return ResponseEntity.ok(rule);
+            @RequestBody ServicePackageRequest request) {
+        ServicePackage newPackage = labOwnerManagementService.addServicePackage(labId, request);
+        return ResponseEntity.ok(newPackage);
     }
 
-    // Các DTO request nội bộ cho Controller
-    public record UpdateLabProfileRequest(
-            String name,
-            String description,
-            String phoneNumber,
-            String address
-    ) {}
-
-    public record UpdateCapacityRuleRequest(
-            int maxDailyRolls
-    ) {}
+    @PutMapping("/capacity-rules")
+    @PreAuthorize("@labTenantGuard.isLabOwner(authentication, #labId)")
+    public ResponseEntity<LabCapacityRule> updateCapacityRule(
+            @PathVariable UUID labId,
+            @RequestBody UpdateCapacityRuleRequest request) {
+        LabCapacityRule updatedRule = labOwnerManagementService.updateCapacityRule(labId, request);
+        return ResponseEntity.ok(updatedRule);
+    }
 }

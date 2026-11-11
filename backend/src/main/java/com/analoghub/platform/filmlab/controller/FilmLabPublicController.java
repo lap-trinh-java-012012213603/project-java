@@ -1,12 +1,11 @@
 package com.analoghub.platform.filmlab.controller;
 
+import com.analoghub.platform.filmlab.dto.LabDetailResponse;
 import com.analoghub.platform.filmlab.service.FilmLabPublicService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/labs")
@@ -15,13 +14,14 @@ public class FilmLabPublicController {
 
     private final FilmLabPublicService filmLabPublicService;
 
-    /**
-     * API công khai: Lấy thông tin chi tiết Lab kèm theo bảng giá công suất hiển thị.
-     * Endpoint: GET /api/v1/labs/{slugOrId}
-     */
     @GetMapping("/{slugOrId}")
-    public ResponseEntity<FilmLabPublicService.LabDetailResponse> getLabDetail(@PathVariable String slugOrId) {
-        FilmLabPublicService.LabDetailResponse response = filmLabPublicService.getLabDetailBySlugOrId(slugOrId);
+    public ResponseEntity<LabDetailResponse> getLabDetails(
+            @PathVariable String slugOrId,
+            HttpServletRequest request) {
+
+        String clientIp = request.getRemoteAddr();
+        LabDetailResponse response = filmLabPublicService.getLabDetails(slugOrId, clientIp);
+
         return ResponseEntity.ok(response);
     }
 }

@@ -1,36 +1,37 @@
 package com.analoghub.platform.filmlab.facade;
 
-import com.analoghub.platform.filmlab.domain.LabCapacityRule;
-import com.analoghub.platform.filmlab.repository.LabCapacityRuleRepository;
-import org.springframework.stereotype.Component;
+import com.analoghub.platform.filmlab.service.LabAnalyticsService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Component
+import java.math.BigDecimal;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
 public class FilmLabFacadeImpl implements FilmLabFacade {
 
-    private final LabCapacityRuleRepository capacityRuleRepository;
-
-    public FilmLabFacadeImpl(LabCapacityRuleRepository capacityRuleRepository) {
-        this.capacityRuleRepository = capacityRuleRepository;
-    }
+    private final LabAnalyticsService labAnalyticsService;
 
     @Override
     @Transactional
-    public boolean reserveCapacity(Long labId, int rollCount) {
-        // Logic giữ chỗ capacity dựa theo rule từng lab
-        // Kiểm tra max_daily_rolls và cập nhật số lượng đã đặt
+    public boolean reserveCapacity(UUID labId, String processType, int requestedRolls) {
+        // TODO: Logic kiểm tra và giữ chỗ công suất lab theo ngày/processType
+        // Tạm thời trả về true để thông suốt luồng đặt lịch
         return true;
     }
 
     @Override
     @Transactional
-    public void releaseCapacity(Long labId, int rollCount) {
-        // Hoàn trả capacity khi hủy đơn
+    public void releaseCapacity(UUID labId, String processType, int rollsToRelease) {
+        // TODO: Logic hoàn trả lại công suất khi đơn hàng bị hủy
     }
 
     @Override
     @Transactional
-    public void recordOrderMetrics(Long labId, int rollCount) {
-        // Ghi nhận metrics đơn hàng cho lab
+    public void recordOrderMetrics(UUID labId, BigDecimal orderAmount) {
+        // Gọi sang service analytics để ghi nhận doanh thu và số lượng đơn hàng hàng ngày
+        labAnalyticsService.recordDailyMetrics(labId, orderAmount);
     }
 }

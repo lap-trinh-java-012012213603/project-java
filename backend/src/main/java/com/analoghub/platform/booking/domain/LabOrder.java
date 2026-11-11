@@ -1,17 +1,29 @@
 package com.analoghub.platform.booking.domain;
 
 import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "bkg_lab_orders")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class LabOrder {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @Column(name = "order_code", nullable = false, unique = true, length = 64)
+    private String orderCode;
 
     @Column(name = "lab_id", nullable = false)
     private UUID labId;
@@ -19,37 +31,63 @@ public class LabOrder {
     @Column(name = "customer_id", nullable = false)
     private UUID customerId;
 
-    @Column(name = "total_amount", nullable = false, precision = 12, scale = 2)
-    private BigDecimal totalAmount;
+    @Builder.Default
+    @Column(name = "status", nullable = false, length = 32)
+    private String status = "PENDING_PAYMENT";
 
-    @Column(name = "shipping_fee", precision = 12, scale = 2)
-    private BigDecimal shippingFee;
+    @Builder.Default
+    @Column(name = "fulfillment_in", nullable = false, length = 32)
+    private String fulfillmentIn = "STORE_DROP_OFF";
 
-    @Column(name = "status", nullable = false, length = 50)
-    private String status; // PENDING, CONFIRMED, COMPLETED, CANCELLED
+    @Builder.Default
+    @Column(name = "fulfillment_out", nullable = false, length = 32)
+    private String fulfillmentOut = "DIGITAL_ONLY";
 
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Builder.Default
+    @Column(name = "negative_handling_policy", nullable = false, length = 32)
+    private String negativeHandlingPolicy = "HOLD_30_DAYS";
 
-    // Getters and Setters
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
+    @Column(name = "total_rolls", nullable = false)
+    private int totalRolls;
 
-    public UUID getLabId() { return labId; }
-    public void setLabId(UUID labId) { this.labId = labId; }
+    @Builder.Default
+    @Column(name = "subtotal_vnd", nullable = false, precision = 15, scale = 2)
+    private BigDecimal subtotalVnd = BigDecimal.ZERO;
 
-    public UUID getCustomerId() { return customerId; }
-    public void setCustomerId(UUID customerId) { this.customerId = customerId; }
+    @Builder.Default
+    @Column(name = "delivery_fee_vnd", nullable = false, precision = 15, scale = 2)
+    private BigDecimal deliveryFeeVnd = BigDecimal.ZERO;
 
-    public BigDecimal getTotalAmount() { return totalAmount; }
-    public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
+    @Builder.Default
+    @Column(name = "discount_vnd", nullable = false, precision = 15, scale = 2)
+    private BigDecimal discountVnd = BigDecimal.ZERO;
 
-    public BigDecimal getShippingFee() { return shippingFee; }
-    public void setShippingFee(BigDecimal shippingFee) { this.shippingFee = shippingFee; }
+    @Builder.Default
+    @Column(name = "total_amount_vnd", nullable = false, precision = 15, scale = 2)
+    private BigDecimal totalAmountVnd = BigDecimal.ZERO;
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    @Column(name = "estimated_completion_at")
+    private Instant estimatedCompletionAt;
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    @Column(name = "payment_expires_at")
+    private Instant paymentExpiresAt;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @Column(name = "created_by")
+    private UUID createdBy;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private Instant updatedAt;
+
+    @Column(name = "updated_by")
+    private UUID updatedBy;
+
+    @Version
+    @Builder.Default
+    @Column(name = "version", nullable = false)
+    private Long version = 0L;
 }
