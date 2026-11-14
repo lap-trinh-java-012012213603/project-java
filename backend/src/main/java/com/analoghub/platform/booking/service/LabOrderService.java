@@ -13,8 +13,8 @@ import com.analoghub.platform.common.exception.OrderException;
 import com.analoghub.platform.common.exception.ResourceNotFoundException;
 import com.analoghub.platform.filmlab.facade.FilmLabFacade;
 import com.analoghub.platform.payment.facade.PaymentFacade;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -29,16 +29,37 @@ import java.util.UUID;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class LabOrderService {
 
     private final LabOrderRepository labOrderRepository;
     private final LabOrderItemRepository labOrderItemRepository;
     private final FilmLabFacade filmLabFacade;
     private final ApplicationEventPublisher eventPublisher;
+    private final @Nullable PaymentFacade paymentFacade;
 
-    @Autowired(required = false)
-    private PaymentFacade paymentFacade;
+    public LabOrderService(
+            LabOrderRepository labOrderRepository,
+            LabOrderItemRepository labOrderItemRepository,
+            FilmLabFacade filmLabFacade,
+            ApplicationEventPublisher eventPublisher
+    ) {
+        this(labOrderRepository, labOrderItemRepository, filmLabFacade, eventPublisher, null);
+    }
+
+    @Autowired
+    public LabOrderService(
+            LabOrderRepository labOrderRepository,
+            LabOrderItemRepository labOrderItemRepository,
+            FilmLabFacade filmLabFacade,
+            ApplicationEventPublisher eventPublisher,
+            @Nullable PaymentFacade paymentFacade
+    ) {
+        this.labOrderRepository = labOrderRepository;
+        this.labOrderItemRepository = labOrderItemRepository;
+        this.filmLabFacade = filmLabFacade;
+        this.eventPublisher = eventPublisher;
+        this.paymentFacade = paymentFacade;
+    }
 
     @Transactional
     public LabOrderResponse createOrder(UUID customerId, CreateLabOrderRequest request) {

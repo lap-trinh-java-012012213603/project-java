@@ -1,6 +1,5 @@
 package com.analoghub.platform.labworkflow.service;
 
-import com.analoghub.platform.booking.facade.BookingOrderFacade;
 import com.analoghub.platform.labworkflow.domain.FilmRoll;
 import com.analoghub.platform.labworkflow.domain.FilmRollStatusLog;
 import com.analoghub.platform.labworkflow.dto.FilmRollResponse;
@@ -25,7 +24,6 @@ public class RollQrCheckInService {
 
     private final FilmRollRepository filmRollRepository;
     private final FilmRollStatusLogRepository statusLogRepository;
-    private final BookingOrderFacade bookingOrderFacade;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
@@ -57,7 +55,6 @@ public class RollQrCheckInService {
         statusLog.setNote(request.note() != null ? request.note() : "Quét mã QR");
         statusLogRepository.save(statusLog);
 
-        bookingOrderFacade.updateOrderStatus(saved.getOrderId(), "IN_LAB_PROCESSING");
         eventPublisher.publishEvent(new FilmRollStatusChangedEvent(saved.getId(), saved.getOrderId(), saved.getLabId(), saved.getCustomerId(), saved.getRollCode(), oldStatus, "CHECKED_IN", saved.getSlaDeadlineAt(), now));
 
         return new FilmRollResponse(saved.getId(), saved.getOrderId(), saved.getOrderItemId(), saved.getLabId(), saved.getCustomerId(), saved.getRollCode(), saved.getFilmFormat(), saved.getProcessType(), saved.getScanResolution(), saved.getPushPullStops(), saved.getStatus(), Boolean.TRUE.equals(saved.getIsBlankRoll()), saved.getCheckedInAt(), saved.getSlaDeadlineAt(), Boolean.TRUE.equals(saved.getSlaBreachNotified()), saved.getCompletedAt());

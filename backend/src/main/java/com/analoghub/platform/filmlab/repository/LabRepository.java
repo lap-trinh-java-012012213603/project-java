@@ -14,4 +14,6 @@ public interface LabRepository extends JpaRepository<Lab, UUID> {
     Optional<Lab> findBySlug(String slug);
 
     Optional<Lab> findByIdAndActiveTrue(UUID id);
+
+    Optional<Lab> findFirstByOwnerUserIdOrderByCreatedAtDesc(UUID ownerUserId);
 }

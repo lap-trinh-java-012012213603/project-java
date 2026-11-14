@@ -9,5 +9,7 @@ import java.util.UUID;
 
 @Repository
 public interface LabOrderItemRepository extends JpaRepository<LabOrderItem, UUID> {
+    List<LabOrderItem> findByOrderId(UUID orderId);
+
     List<LabOrderItem> findAllByOrderId(UUID orderId);
 }

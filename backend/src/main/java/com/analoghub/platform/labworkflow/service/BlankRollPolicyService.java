@@ -8,8 +8,8 @@ import com.analoghub.platform.labworkflow.dto.ReportBlankRollRequest;
 import com.analoghub.platform.labworkflow.repository.FilmRollRepository;
 import com.analoghub.platform.labworkflow.repository.FilmRollStatusLogRepository;
 import com.analoghub.platform.payment.facade.PaymentFacade;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -20,15 +20,36 @@ import java.util.UUID;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class BlankRollPolicyService {
     private final FilmRollRepository filmRollRepository;
     private final FilmRollStatusLogRepository statusLogRepository;
     private final FilmLabFacade filmLabFacade;
     private final SimpMessagingTemplate simpMessagingTemplate;
+    private final @Nullable PaymentFacade paymentFacade;
 
-    @Autowired(required = false)
-    private PaymentFacade paymentFacade;
+    public BlankRollPolicyService(
+            FilmRollRepository filmRollRepository,
+            FilmRollStatusLogRepository statusLogRepository,
+            FilmLabFacade filmLabFacade,
+            SimpMessagingTemplate simpMessagingTemplate
+    ) {
+        this(filmRollRepository, statusLogRepository, filmLabFacade, simpMessagingTemplate, null);
+    }
+
+    @Autowired
+    public BlankRollPolicyService(
+            FilmRollRepository filmRollRepository,
+            FilmRollStatusLogRepository statusLogRepository,
+            FilmLabFacade filmLabFacade,
+            SimpMessagingTemplate simpMessagingTemplate,
+            @Nullable PaymentFacade paymentFacade
+    ) {
+        this.filmRollRepository = filmRollRepository;
+        this.statusLogRepository = statusLogRepository;
+        this.filmLabFacade = filmLabFacade;
+        this.simpMessagingTemplate = simpMessagingTemplate;
+        this.paymentFacade = paymentFacade;
+    }
 
     @Transactional
     public FilmRollResponse reportBlankRoll(UUID labId, UUID rollId, UUID operatorId, ReportBlankRollRequest request) {
