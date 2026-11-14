@@ -7,6 +7,10 @@ import com.analoghub.platform.booking.dto.LabOrderResponse;
 import com.analoghub.platform.booking.event.LabOrderCreatedEvent;
 import com.analoghub.platform.booking.repository.LabOrderItemRepository;
 import com.analoghub.platform.booking.repository.LabOrderRepository;
+import com.analoghub.platform.common.exception.BusinessException;
+import com.analoghub.platform.common.exception.ErrorCode;
+import com.analoghub.platform.common.exception.OrderException;
+import com.analoghub.platform.common.exception.ResourceNotFoundException;
 import com.analoghub.platform.filmlab.facade.FilmLabFacade;
 import com.analoghub.platform.payment.facade.PaymentFacade;
 import lombok.RequiredArgsConstructor;
@@ -38,8 +42,13 @@ public class LabOrderService {
 
     @Transactional
     public LabOrderResponse createOrder(UUID customerId, CreateLabOrderRequest request) {
+        if (request.items() == null || request.items().isEmpty()) {
+            throw OrderException.emptyRolls();
+        }
+
         int totalRolls = 0;
         BigDecimal subtotalVnd = BigDecimal.ZERO;
+        int maxTurnaroundHours = 24;
 
         String orderCode = "ORD-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
         Instant now = Instant.now();
@@ -52,7 +61,9 @@ public class LabOrderService {
         order.setStatus("PENDING_PAYMENT");
         order.setFulfillmentIn(request.fulfillmentIn());
         order.setFulfillmentOut(request.fulfillmentOut());
-        order.setNegativeHandlingPolicy(request.negativeHandlingPolicy() != null ? request.negativeHandlingPolicy() : "HOLD_30_DAYS");
+        order.setNegativeHandlingPolicy(
+                request.negativeHandlingPolicy() != null ? request.negativeHandlingPolicy() : "HOLD_30_DAYS"
+        );
         order.setPaymentExpiresAt(paymentExpiresAt);
 
         List<LabOrderItem> itemsToSave = new ArrayList<>();
@@ -61,13 +72,17 @@ public class LabOrderService {
             FilmLabFacade.ServicePackageInfo pkg = filmLabFacade.getServicePackageInfo(itemReq.servicePackageId());
 
             if (!pkg.labId().equals(request.labId())) {
-                throw new IllegalArgumentException("Gói dịch vụ không thuộc Lab đã chọn");
+                throw new BusinessException(ErrorCode.VALIDATION_ERROR, "Gói dịch vụ không thuộc Lab đã chọn");
             }
 
             filmLabFacade.reserveCapacity(request.labId(), pkg.processType(), itemReq.rollQuantity());
 
+            int estHours = filmLabFacade.getEstimatedTurnaroundHours(request.labId(), pkg.processType());
+            maxTurnaroundHours = Math.max(maxTurnaroundHours, estHours);
+
             totalRolls += itemReq.rollQuantity();
-            subtotalVnd = subtotalVnd.add(pkg.unitPriceVnd().multiply(BigDecimal.valueOf(itemReq.rollQuantity())));
+            BigDecimal lineTotal = pkg.unitPriceVnd().multiply(BigDecimal.valueOf(itemReq.rollQuantity()));
+            subtotalVnd = subtotalVnd.add(lineTotal);
 
             LabOrderItem orderItem = new LabOrderItem();
             orderItem.setServicePackageId(pkg.id());
@@ -83,23 +98,32 @@ public class LabOrderService {
             itemsToSave.add(orderItem);
         }
 
-        BigDecimal deliveryFee = "PICKUP_DELIVERY".equals(request.fulfillmentIn()) || "RETURN_DELIVERY_NEGATIVE".equals(request.fulfillmentOut()) ? BigDecimal.valueOf(30000) : BigDecimal.ZERO;
+        BigDecimal deliveryFee = "PICKUP_DELIVERY".equals(request.fulfillmentIn())
+                || "RETURN_DELIVERY_NEGATIVE".equals(request.fulfillmentOut())
+                ? BigDecimal.valueOf(30000) : BigDecimal.ZERO;
 
         order.setTotalRolls(totalRolls);
         order.setSubtotalVnd(subtotalVnd);
         order.setDeliveryFeeVnd(deliveryFee);
         order.setDiscountVnd(BigDecimal.ZERO);
         order.setTotalAmountVnd(subtotalVnd.add(deliveryFee));
-        order.setEstimatedCompletionAt(now.plusSeconds(24 * 3600L)); // Mặc định 24h
+        order.setEstimatedCompletionAt(now.plusSeconds(maxTurnaroundHours * 3600L));
 
         LabOrder savedOrder = labOrderRepository.save(order);
-        itemsToSave.forEach(item -> item.setOrderId(savedOrder.getId()));
+
+        for (LabOrderItem item : itemsToSave) {
+            item.setOrderId(savedOrder.getId());
+        }
         List<LabOrderItem> savedItems = labOrderItemRepository.saveAll(itemsToSave);
 
         eventPublisher.publishEvent(new LabOrderCreatedEvent(
-                savedOrder.getId(), savedOrder.getOrderCode(), savedOrder.getCustomerId(),
-                savedOrder.getLabId(), savedOrder.getTotalRolls(), savedOrder.getTotalAmountVnd(),
-                savedOrder.getPaymentExpiresAt() != null ? savedOrder.getPaymentExpiresAt().atOffset(ZoneOffset.UTC) : null
+                savedOrder.getId(),
+                savedOrder.getOrderCode(),
+                savedOrder.getCustomerId(),
+                savedOrder.getLabId(),
+                savedOrder.getTotalRolls(),
+                savedOrder.getTotalAmountVnd(),
+                now.atOffset(ZoneOffset.UTC)
         ));
 
         return mapToResponse(savedOrder, savedItems);
@@ -107,62 +131,99 @@ public class LabOrderService {
 
     @Transactional
     public LabOrderResponse cancelOrderByCustomer(UUID customerId, UUID orderId, String reason) {
-        LabOrder order = labOrderRepository.findById(orderId).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn"));
-        if (!order.getCustomerId().equals(customerId)) throw new IllegalArgumentException("Không có quyền");
-        if (!"PENDING_PAYMENT".equals(order.getStatus()) && !"PAID_WAITING_FILM".equals(order.getStatus())) throw new IllegalArgumentException("Không thể hủy");
+        LabOrder order = labOrderRepository.findById(orderId)
+                .orElseThrow(() -> ResourceNotFoundException.order(orderId));
+
+        if (!order.getCustomerId().equals(customerId)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "Bạn không có quyền thao tác trên đơn hàng này");
+        }
+        if (!"PENDING_PAYMENT".equals(order.getStatus()) && !"PAID_WAITING_FILM".equals(order.getStatus())) {
+            throw OrderException.cannotCancel(order.getStatus());
+        }
 
         boolean wasPaid = "PAID_WAITING_FILM".equals(order.getStatus());
         order.setStatus("CANCELLED");
         LabOrder saved = labOrderRepository.save(order);
 
-        List<LabOrderItem> items = labOrderItemRepository.findAll().stream().filter(i -> orderId.equals(i.getOrderId())).toList();
+        List<LabOrderItem> items = labOrderItemRepository.findByOrderId(orderId);
         items.forEach(item -> filmLabFacade.releaseCapacity(order.getLabId(), item.getProcessType(), item.getRollQuantity()));
 
-        if (wasPaid && paymentFacade != null) paymentFacade.refundEscrow(orderId, reason, "CUSTOMER_CANCEL");
+        if (wasPaid && paymentFacade != null) {
+            paymentFacade.refundEscrow(orderId, "LAB_ORDER", reason != null ? reason : "CUSTOMER_CANCEL");
+        }
         return mapToResponse(saved, items);
     }
 
     @Transactional
     public LabOrderResponse rejectOrderByLab(UUID labId, UUID orderId, String reason) {
-        LabOrder order = labOrderRepository.findById(orderId).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn"));
-        if (!order.getLabId().equals(labId)) throw new IllegalArgumentException("Không có quyền");
-        if (!"PENDING_PAYMENT".equals(order.getStatus()) && !"PAID_WAITING_FILM".equals(order.getStatus())) throw new IllegalArgumentException("Không thể từ chối");
+        LabOrder order = labOrderRepository.findById(orderId)
+                .orElseThrow(() -> ResourceNotFoundException.order(orderId));
+
+        if (!order.getLabId().equals(labId)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "Đơn hàng không thuộc quyền quản lý của Lab");
+        }
+        if (!"PENDING_PAYMENT".equals(order.getStatus()) && !"PAID_WAITING_FILM".equals(order.getStatus())) {
+            throw new BusinessException(ErrorCode.ORDER_CANNOT_BE_CANCELLED, "Không thể từ chối đơn hàng ở trạng thái hiện tại");
+        }
 
         boolean wasPaid = "PAID_WAITING_FILM".equals(order.getStatus());
         order.setStatus("CANCELLED");
         LabOrder saved = labOrderRepository.save(order);
 
-        List<LabOrderItem> items = labOrderItemRepository.findAll().stream().filter(i -> orderId.equals(i.getOrderId())).toList();
+        List<LabOrderItem> items = labOrderItemRepository.findByOrderId(orderId);
         items.forEach(item -> filmLabFacade.releaseCapacity(order.getLabId(), item.getProcessType(), item.getRollQuantity()));
 
-        if (wasPaid && paymentFacade != null) paymentFacade.refundEscrow(orderId, reason, "LAB_REJECT");
+        if (wasPaid && paymentFacade != null) {
+            paymentFacade.refundEscrow(orderId, "LAB_ORDER", reason != null ? reason : "LAB_REJECT");
+        }
         return mapToResponse(saved, items);
     }
 
     @Transactional(readOnly = true)
     public LabOrderResponse getOrderById(UUID orderId) {
-        LabOrder order = labOrderRepository.findById(orderId).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn"));
-        List<LabOrderItem> items = labOrderItemRepository.findAll().stream().filter(i -> orderId.equals(i.getOrderId())).toList();
+        LabOrder order = labOrderRepository.findById(orderId)
+                .orElseThrow(() -> ResourceNotFoundException.order(orderId));
+        List<LabOrderItem> items = labOrderItemRepository.findByOrderId(orderId);
         return mapToResponse(order, items);
     }
 
     @Transactional
     public void transitionOrderStatus(UUID orderId, String newStatus) {
-        LabOrder order = labOrderRepository.findById(orderId).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn"));
+        LabOrder order = labOrderRepository.findById(orderId)
+                .orElseThrow(() -> ResourceNotFoundException.order(orderId));
         order.setStatus(newStatus);
         labOrderRepository.save(order);
     }
 
     private LabOrderResponse mapToResponse(LabOrder order, List<LabOrderItem> items) {
         List<LabOrderResponse.OrderItemDto> itemDtos = items.stream().map(i -> new LabOrderResponse.OrderItemDto(
-                i.getId(), i.getServicePackageId(), i.getFilmStockId(), i.getPackageNameSnapshot(),
-                i.getFilmFormat(), i.getProcessType(), i.getScanResolution(), i.getRollQuantity(),
-                i.getUnitPriceSnapshotVnd(), i.getPushPullStops(), i.getSpecialInstructions())).toList();
+                i.getId(),
+                i.getServicePackageId(),
+                i.getFilmStockId(),
+                i.getPackageNameSnapshot(),
+                i.getFilmFormat(),
+                i.getProcessType(),
+                i.getScanResolution(),
+                i.getRollQuantity(),
+                i.getUnitPriceSnapshotVnd(),
+                i.getPushPullStops(),
+                i.getSpecialInstructions()
+        )).toList();
 
         return new LabOrderResponse(
-                order.getId(), order.getOrderCode(), order.getCustomerId(), order.getLabId(), order.getStatus(),
-                order.getFulfillmentIn(), order.getFulfillmentOut(), order.getNegativeHandlingPolicy(),
-                order.getTotalRolls(), order.getSubtotalVnd(), order.getDeliveryFeeVnd(), order.getDiscountVnd(), order.getTotalAmountVnd(),
+                order.getId(),
+                order.getOrderCode(),
+                order.getCustomerId(),
+                order.getLabId(),
+                order.getStatus(),
+                order.getFulfillmentIn(),
+                order.getFulfillmentOut(),
+                order.getNegativeHandlingPolicy(),
+                order.getTotalRolls(),
+                order.getSubtotalVnd(),
+                order.getDeliveryFeeVnd(),
+                order.getDiscountVnd(),
+                order.getTotalAmountVnd(),
                 order.getEstimatedCompletionAt() != null ? order.getEstimatedCompletionAt().atOffset(ZoneOffset.UTC) : null,
                 order.getPaymentExpiresAt() != null ? order.getPaymentExpiresAt().atOffset(ZoneOffset.UTC) : null,
                 order.getCreatedAt() != null ? order.getCreatedAt().atOffset(ZoneOffset.UTC) : null,
