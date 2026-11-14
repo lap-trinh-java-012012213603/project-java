@@ -1,5 +1,18 @@
 package com.analoghub.platform.filmlab.facade;
 
+import java.math.BigDecimal;
+import java.util.UUID;
+
 public interface FilmLabFacade {
-    // Định nghĩa các phương thức giao tiếp cốt lõi
+    void reserveCapacity(UUID labId, String processType, int rollCount);
+    void releaseCapacity(UUID labId, String processType, int rollCount);
+    int getEstimatedTurnaroundHours(UUID labId, String processType);
+
+    // DTO trung gian để tránh vi phạm ranh giới Module
+    record ServicePackageInfo(
+            UUID id, UUID labId, String name, String filmFormat,
+            String processType, String scanResolution, BigDecimal unitPriceVnd
+    ) {}
+
+    ServicePackageInfo getServicePackageInfo(UUID packageId);
 }
