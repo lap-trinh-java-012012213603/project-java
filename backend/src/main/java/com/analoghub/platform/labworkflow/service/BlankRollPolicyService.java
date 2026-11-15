@@ -1,5 +1,10 @@
 package com.analoghub.platform.labworkflow.service;
 
+import com.analoghub.platform.booking.facade.BookingOrderFacade;
+import com.analoghub.platform.common.exception.BusinessException;
+import com.analoghub.platform.common.exception.ErrorCode;
+import com.analoghub.platform.common.exception.ResourceNotFoundException;
+import com.analoghub.platform.common.websocket.StompNotificationPublisher;
 import com.analoghub.platform.filmlab.facade.FilmLabFacade;
 import com.analoghub.platform.labworkflow.domain.FilmRoll;
 import com.analoghub.platform.labworkflow.domain.FilmRollStatusLog;
@@ -11,10 +16,10 @@ import com.analoghub.platform.payment.facade.PaymentFacade;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -22,19 +27,29 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class BlankRollPolicyService {
+
     private final FilmRollRepository filmRollRepository;
     private final FilmRollStatusLogRepository statusLogRepository;
     private final FilmLabFacade filmLabFacade;
-    private final SimpMessagingTemplate simpMessagingTemplate;
+    private final StompNotificationPublisher stompPublisher;
+
+    @Autowired(required = false)
+    private BookingOrderFacade bookingOrderFacade;
 
     @Autowired(required = false)
     private PaymentFacade paymentFacade;
 
     @Transactional
     public FilmRollResponse reportBlankRoll(UUID labId, UUID rollId, UUID operatorId, ReportBlankRollRequest request) {
-        FilmRoll roll = filmRollRepository.findById(rollId).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy"));
-        if (!roll.getLabId().equals(labId)) throw new IllegalArgumentException("Không thuộc Lab");
-        if (Boolean.TRUE.equals(roll.getIsBlankRoll())) throw new IllegalArgumentException("Đã báo trắng");
+        FilmRoll roll = filmRollRepository.findById(rollId)
+                .orElseThrow(() -> ResourceNotFoundException.roll(rollId));
+
+        if (!roll.getLabId().equals(labId)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "Cuộn film này không thuộc Lab của bạn");
+        }
+        if (Boolean.TRUE.equals(roll.getIsBlankRoll())) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "Cuộn film này đã được ghi nhận film trắng trước đó");
+        }
 
         String oldStatus = roll.getStatus();
         OffsetDateTime now = OffsetDateTime.now();
@@ -51,21 +66,51 @@ public class BlankRollPolicyService {
         logMsg.setFromStatus(oldStatus);
         logMsg.setToStatus("BLANK_ROLL_DETECTED");
         logMsg.setChangedByUserId(operatorId);
-        logMsg.setNote("Film trắng: " + request.note());
+        logMsg.setNote("Film trắng: " + (request.note() != null ? request.note() : ""));
         statusLogRepository.save(logMsg);
 
         if (paymentFacade != null) {
             try {
-                paymentFacade.refundEscrow(saved.getOrderId(), "Hoàn phí cuộn trắng: " + saved.getRollCode(), "BLANK_ROLL");
+                BigDecimal refundFee = BigDecimal.valueOf(30000);
+                if (bookingOrderFacade != null && saved.getOrderItemId() != null) {
+                    try {
+                        refundFee = bookingOrderFacade.getUnitPriceForOrderItem(saved.getOrderItemId());
+                    } catch (Exception ignored) {
+                    }
+                }
+                paymentFacade.refundBlankRollScanFee(
+                        saved.getOrderId(),
+                        saved.getId(),
+                        saved.getCustomerId(),
+                        refundFee,
+                        "Hoàn phí scan cuộn film trắng: " + saved.getRollCode()
+                );
             } catch (Exception e) {
                 log.warn("Lỗi hoàn phí cuộn trắng {}: {}", saved.getRollCode(), e.getMessage());
             }
         }
 
-        FilmRollResponse response = new FilmRollResponse(saved.getId(), saved.getOrderId(), saved.getOrderItemId(), saved.getLabId(), saved.getCustomerId(), saved.getRollCode(), saved.getFilmFormat(), saved.getProcessType(), saved.getScanResolution(), saved.getPushPullStops(), saved.getStatus(), Boolean.TRUE.equals(saved.getIsBlankRoll()), saved.getCheckedInAt(), saved.getSlaDeadlineAt(), Boolean.TRUE.equals(saved.getSlaBreachNotified()), saved.getCompletedAt());
+        FilmRollResponse response = new FilmRollResponse(
+                saved.getId(),
+                saved.getOrderId(),
+                saved.getOrderItemId(),
+                saved.getLabId(),
+                saved.getCustomerId(),
+                saved.getRollCode(),
+                saved.getFilmFormat(),
+                saved.getProcessType(),
+                saved.getScanResolution(),
+                saved.getPushPullStops(),
+                saved.getStatus(),
+                Boolean.TRUE.equals(saved.getIsBlankRoll()),
+                saved.getCheckedInAt(),
+                saved.getSlaDeadlineAt(),
+                Boolean.TRUE.equals(saved.getSlaBreachNotified()),
+                saved.getCompletedAt()
+        );
 
-        simpMessagingTemplate.convertAndSend("/topic/orders/" + saved.getOrderId() + "/rolls", response);
-        simpMessagingTemplate.convertAndSend("/topic/labs/" + labId + "/kanban", response);
+        stompPublisher.publish("/topic/orders/" + saved.getOrderId() + "/rolls", response);
+        stompPublisher.publish("/topic/labs/" + labId + "/kanban", response);
 
         return response;
     }

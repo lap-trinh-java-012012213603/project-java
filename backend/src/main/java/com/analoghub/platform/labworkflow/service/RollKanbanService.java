@@ -1,6 +1,11 @@
 package com.analoghub.platform.labworkflow.service;
 
 import com.analoghub.platform.booking.facade.BookingOrderFacade;
+import com.analoghub.platform.common.exception.BusinessException;
+import com.analoghub.platform.common.exception.ErrorCode;
+import com.analoghub.platform.common.exception.OrderException;
+import com.analoghub.platform.common.exception.ResourceNotFoundException;
+import com.analoghub.platform.common.websocket.StompNotificationPublisher;
 import com.analoghub.platform.filmlab.facade.FilmLabFacade;
 import com.analoghub.platform.labworkflow.domain.FilmRoll;
 import com.analoghub.platform.labworkflow.domain.FilmRollStatusLog;
@@ -11,12 +16,10 @@ import com.analoghub.platform.labworkflow.repository.FilmRollRepository;
 import com.analoghub.platform.labworkflow.repository.FilmRollStatusLogRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,18 +44,22 @@ public class RollKanbanService {
     private final FilmLabFacade filmLabFacade;
     private final BookingOrderFacade bookingOrderFacade;
     private final ApplicationEventPublisher eventPublisher;
-    private final SimpMessagingTemplate simpMessagingTemplate;
+    private final StompNotificationPublisher stompPublisher;
 
     @Transactional
     public FilmRollResponse transitionStatus(UUID labId, UUID rollId, UUID operatorId, UpdateRollStatusRequest request) {
-        FilmRoll roll = filmRollRepository.findById(rollId).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy cuộn film"));
-        if (!roll.getLabId().equals(labId)) throw new IllegalArgumentException("Không thuộc Lab");
+        FilmRoll roll = filmRollRepository.findById(rollId)
+                .orElseThrow(() -> ResourceNotFoundException.roll(rollId));
+
+        if (!roll.getLabId().equals(labId)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "Cuộn film này không thuộc Lab của bạn");
+        }
 
         String currentStatus = roll.getStatus();
         String targetStatus = request.targetStatus().trim().toUpperCase();
 
         if (!ALLOWED_TRANSITIONS.getOrDefault(currentStatus, Set.of()).contains(targetStatus)) {
-            throw new IllegalArgumentException("Trạng thái không hợp lệ");
+            throw OrderException.invalidRollTransition(currentStatus, targetStatus);
         }
 
         OffsetDateTime now = OffsetDateTime.now();
@@ -76,27 +83,56 @@ public class RollKanbanService {
 
         FilmRollResponse response = toDto(saved);
 
-        // Gửi qua WebSocket bằng SimpMessagingTemplate chuẩn
-        simpMessagingTemplate.convertAndSend("/topic/orders/" + saved.getOrderId() + "/rolls", response);
-        simpMessagingTemplate.convertAndSend("/topic/labs/" + labId + "/kanban", response);
+        stompPublisher.publish("/topic/orders/" + saved.getOrderId() + "/rolls", response);
+        stompPublisher.publish("/topic/labs/" + labId + "/kanban", response);
 
-        eventPublisher.publishEvent(new FilmRollStatusChangedEvent(saved.getId(), saved.getOrderId(), saved.getLabId(), saved.getCustomerId(), saved.getRollCode(), currentStatus, targetStatus, saved.getSlaDeadlineAt(), now));
+        eventPublisher.publishEvent(new FilmRollStatusChangedEvent(
+                saved.getId(),
+                saved.getOrderId(),
+                saved.getLabId(),
+                saved.getCustomerId(),
+                saved.getRollCode(),
+                currentStatus,
+                targetStatus,
+                saved.getSlaDeadlineAt(),
+                now
+        ));
         return response;
     }
 
     @Transactional(readOnly = true)
     public List<FilmRollResponse> getLabKanbanRolls(UUID labId) {
-        return filmRollRepository.findByLabIdOrderByCheckedInAtAsc(labId).stream().map(this::toDto).toList();
+        return filmRollRepository.findByLabIdOrderByCheckedInAtAsc(labId).stream()
+                .map(this::toDto)
+                .toList();
     }
 
     private void checkAndSyncOrderCompletion(UUID orderId) {
         List<FilmRoll> rolls = filmRollRepository.findByOrderId(orderId);
-        if (!rolls.isEmpty() && rolls.stream().allMatch(r -> Set.of("COMPLETED", "BLANK_ROLL_DETECTED", "NEGATIVE_RETURNED").contains(r.getStatus()))) {
+        if (!rolls.isEmpty() && rolls.stream().allMatch(r ->
+                Set.of("COMPLETED", "BLANK_ROLL_DETECTED", "NEGATIVE_RETURNED").contains(r.getStatus()))) {
             bookingOrderFacade.updateOrderStatus(orderId, "SCAN_DELIVERED");
         }
     }
 
     private FilmRollResponse toDto(FilmRoll r) {
-        return new FilmRollResponse(r.getId(), r.getOrderId(), r.getOrderItemId(), r.getLabId(), r.getCustomerId(), r.getRollCode(), r.getFilmFormat(), r.getProcessType(), r.getScanResolution(), r.getPushPullStops(), r.getStatus(), Boolean.TRUE.equals(r.getIsBlankRoll()), r.getCheckedInAt(), r.getSlaDeadlineAt(), Boolean.TRUE.equals(r.getSlaBreachNotified()), r.getCompletedAt());
+        return new FilmRollResponse(
+                r.getId(),
+                r.getOrderId(),
+                r.getOrderItemId(),
+                r.getLabId(),
+                r.getCustomerId(),
+                r.getRollCode(),
+                r.getFilmFormat(),
+                r.getProcessType(),
+                r.getScanResolution(),
+                r.getPushPullStops(),
+                r.getStatus(),
+                Boolean.TRUE.equals(r.getIsBlankRoll()),
+                r.getCheckedInAt(),
+                r.getSlaDeadlineAt(),
+                Boolean.TRUE.equals(r.getSlaBreachNotified()),
+                r.getCompletedAt()
+        );
     }
 }

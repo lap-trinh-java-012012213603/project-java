@@ -24,8 +24,8 @@ public class RollQrCheckInLabOwnerController {
             @PathVariable UUID labId,
             @Valid @RequestBody QrCheckInRequest request
     ) {
-        UUID operatorId = SecurityContextUtils.getCurrentUserId().orElse(null);
+        UUID operatorId = SecurityContextUtils.getRequiredCurrentUserId();
         FilmRollResponse response = rollQrCheckInService.checkInRollByQr(labId, operatorId, request);
-        return ResponseEntity.ok(ApiResponse.success("Check-in cuộn film thành công", response));
+        return ResponseEntity.ok(ApiResponse.success("Check-in cuộn film thành công, bắt đầu tính SLA", response));
     }
 }

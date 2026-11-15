@@ -34,7 +34,7 @@ public class LabKanbanController {
             @PathVariable UUID rollId,
             @Valid @RequestBody UpdateRollStatusRequest request
     ) {
-        UUID operatorId = SecurityContextUtils.getCurrentUserId().orElse(null);
+        UUID operatorId = SecurityContextUtils.getRequiredCurrentUserId();
         FilmRollResponse response = rollKanbanService.transitionStatus(labId, rollId, operatorId, request);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái Kanban thành công", response));
     }
@@ -45,8 +45,8 @@ public class LabKanbanController {
             @PathVariable UUID rollId,
             @Valid @RequestBody ReportBlankRollRequest request
     ) {
-        UUID operatorId = SecurityContextUtils.getCurrentUserId().orElse(null);
+        UUID operatorId = SecurityContextUtils.getRequiredCurrentUserId();
         FilmRollResponse response = blankRollPolicyService.reportBlankRoll(labId, rollId, operatorId, request);
-        return ResponseEntity.ok(ApiResponse.success("Đã ghi nhận cuộn film trắng", response));
+        return ResponseEntity.ok(ApiResponse.success("Đã ghi nhận cuộn film trắng và hoàn phí scan cho khách", response));
     }
 }
