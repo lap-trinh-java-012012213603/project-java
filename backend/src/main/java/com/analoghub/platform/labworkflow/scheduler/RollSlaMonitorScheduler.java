@@ -39,7 +39,7 @@ public class RollSlaMonitorScheduler {
             roll.setSlaBreachNotified(true);
             filmRollRepository.save(roll);
 
-            stompPublisher.publish("/topic/labs/" + roll.getLabId() + "/kanban", Map.of(
+            stompPublisher.publishToTopic("/topic/labs/" + roll.getLabId() + "/kanban", Map.of(
                     "type", "SLA_BREACH_ALERT",
                     "rollId", roll.getId().toString(),
                     "rollCode", roll.getRollCode(),

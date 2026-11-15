@@ -78,7 +78,7 @@ public class BlankRollPolicyService {
                     } catch (Exception ignored) {
                     }
                 }
-                paymentFacade.refundBlankRollScanFee(
+                paymentFacade.partialRefundBlankRoll(
                         saved.getOrderId(),
                         saved.getId(),
                         saved.getCustomerId(),
@@ -109,8 +109,8 @@ public class BlankRollPolicyService {
                 saved.getCompletedAt()
         );
 
-        stompPublisher.publish("/topic/orders/" + saved.getOrderId() + "/rolls", response);
-        stompPublisher.publish("/topic/labs/" + labId + "/kanban", response);
+        stompPublisher.publishToTopic("/topic/orders/" + saved.getOrderId() + "/rolls", response);
+        stompPublisher.publishToTopic("/topic/labs/" + labId + "/kanban", response);
 
         return response;
     }

@@ -83,8 +83,8 @@ public class RollKanbanService {
 
         FilmRollResponse response = toDto(saved);
 
-        stompPublisher.publish("/topic/orders/" + saved.getOrderId() + "/rolls", response);
-        stompPublisher.publish("/topic/labs/" + labId + "/kanban", response);
+        stompPublisher.publishToTopic("/topic/orders/" + saved.getOrderId() + "/rolls", response);
+        stompPublisher.publishToTopic("/topic/labs/" + labId + "/kanban", response);
 
         eventPublisher.publishEvent(new FilmRollStatusChangedEvent(
                 saved.getId(),
