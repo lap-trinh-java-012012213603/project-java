@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface LabOrderItemRepository extends JpaRepository<LabOrderItem, UUID> {
     List<LabOrderItem> findAllByOrderId(UUID orderId);
+    List<LabOrderItem> findByOrderId(UUID orderId);
 }

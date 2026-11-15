@@ -25,21 +25,23 @@ public class UnpaidOrderAutoCancelScheduler {
     private final FilmLabFacade filmLabFacade;
 
     @Scheduled(fixedDelayString = "60000") // 1 phút
-    @SchedulerLock(name = "UnpaidOrderAutoCancelScheduler_cancel", lockAtLeastFor = "PT15S", lockAtMostFor = "PT50S")
+    @SchedulerLock(name = "UnpaidOrderAutoCancelScheduler_cancelExpiredOrders", lockAtLeastFor = "PT15S", lockAtMostFor = "PT50S")
     @Transactional
     public void cancelExpiredUnpaidOrders() {
         Instant now = Instant.now();
-        List<LabOrder> expiredOrders = labOrderRepository.findAll().stream()
-                .filter(o -> "PENDING_PAYMENT".equals(o.getStatus()) && o.getPaymentExpiresAt() != null && o.getPaymentExpiresAt().isBefore(now))
-                .toList();
+        List<LabOrder> expiredOrders = labOrderRepository.findByStatusAndPaymentExpiresAtBefore("PENDING_PAYMENT", now);
 
         for (LabOrder order : expiredOrders) {
             order.setStatus("CANCELLED");
             labOrderRepository.save(order);
 
-            List<LabOrderItem> items = labOrderItemRepository.findAll().stream().filter(i -> order.getId().equals(i.getOrderId())).toList();
-            items.forEach(item -> filmLabFacade.releaseCapacity(order.getLabId(), item.getProcessType(), item.getRollQuantity()));
-            log.info("Tự động hủy đơn {}", order.getOrderCode());
+            List<LabOrderItem> items = labOrderItemRepository.findByOrderId(order.getId());
+            for (LabOrderItem item : items) {
+                filmLabFacade.releaseCapacity(order.getLabId(), item.getProcessType(), item.getRollQuantity());
+            }
+
+            log.info("Tự động hủy đơn quá hạn thanh toán 15 phút: {} và nhả {} cuộn công suất",
+                    order.getOrderCode(), order.getTotalRolls());
         }
     }
 }

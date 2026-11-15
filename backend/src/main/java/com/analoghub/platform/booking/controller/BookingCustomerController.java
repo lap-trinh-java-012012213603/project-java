@@ -27,10 +27,10 @@ public class BookingCustomerController {
     public ResponseEntity<ApiResponse<LabOrderResponse>> createOrder(
             @Valid @RequestBody CreateLabOrderRequest request
     ) {
-        UUID customerId = SecurityContextUtils.getCurrentUserId().orElseThrow();
+        UUID customerId = SecurityContextUtils.getRequiredCurrentUserId();
         LabOrderResponse response = labOrderService.createOrder(customerId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Tạo đơn đặt lịch thành công", response));
+                .body(ApiResponse.success("Tạo đơn đặt lịch tráng/scan thành công", response));
     }
 
     @GetMapping("/{orderId}")
@@ -43,7 +43,7 @@ public class BookingCustomerController {
             @PathVariable UUID orderId,
             @Valid @RequestBody CancelOrderRequest request
     ) {
-        UUID customerId = SecurityContextUtils.getCurrentUserId().orElseThrow();
+        UUID customerId = SecurityContextUtils.getRequiredCurrentUserId();
         LabOrderResponse response = labOrderService.cancelOrderByCustomer(customerId, orderId, request.reason());
         return ResponseEntity.ok(ApiResponse.success("Hủy đơn hàng thành công", response));
     }
