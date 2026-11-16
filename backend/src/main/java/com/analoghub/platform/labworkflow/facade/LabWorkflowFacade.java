@@ -24,4 +24,6 @@ public interface LabWorkflowFacade {
     );
 
     List<FilmRollResponse> getRollsByOrderId(UUID orderId);
+
+    boolean areAllRollsCompletedForOrder(UUID orderId);
 }

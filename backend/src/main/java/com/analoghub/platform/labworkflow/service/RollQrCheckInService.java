@@ -1,6 +1,5 @@
 package com.analoghub.platform.labworkflow.service;
 
-import com.analoghub.platform.booking.facade.BookingOrderFacade;
 import com.analoghub.platform.common.exception.BusinessException;
 import com.analoghub.platform.common.exception.ErrorCode;
 import com.analoghub.platform.common.exception.ResourceNotFoundException;
@@ -29,7 +28,6 @@ public class RollQrCheckInService {
 
     private final FilmRollRepository filmRollRepository;
     private final FilmRollStatusLogRepository statusLogRepository;
-    private final BookingOrderFacade bookingOrderFacade;
     private final FilmLabFacade filmLabFacade;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -69,7 +67,6 @@ public class RollQrCheckInService {
         statusLog.setNote(request.note() != null ? request.note() : "Quét mã QR Check-in thành công");
         statusLogRepository.save(statusLog);
 
-        bookingOrderFacade.updateOrderStatus(saved.getOrderId(), "IN_LAB_PROCESSING");
         eventPublisher.publishEvent(new FilmRollStatusChangedEvent(
                 saved.getId(),
                 saved.getOrderId(),

@@ -1,6 +1,5 @@
 package com.analoghub.platform.labworkflow.service;
 
-import com.analoghub.platform.booking.facade.BookingOrderFacade;
 import com.analoghub.platform.common.exception.BusinessException;
 import com.analoghub.platform.common.exception.ErrorCode;
 import com.analoghub.platform.common.exception.OrderException;
@@ -42,7 +41,6 @@ public class RollKanbanService {
     private final FilmRollRepository filmRollRepository;
     private final FilmRollStatusLogRepository statusLogRepository;
     private final FilmLabFacade filmLabFacade;
-    private final BookingOrderFacade bookingOrderFacade;
     private final ApplicationEventPublisher eventPublisher;
     private final StompNotificationPublisher stompPublisher;
 
@@ -79,8 +77,6 @@ public class RollKanbanService {
         log.setNote(request.note());
         statusLogRepository.save(log);
 
-        checkAndSyncOrderCompletion(saved.getOrderId());
-
         FilmRollResponse response = toDto(saved);
 
         stompPublisher.publishToTopic("/topic/orders/" + saved.getOrderId() + "/rolls", response);
@@ -105,14 +101,6 @@ public class RollKanbanService {
         return filmRollRepository.findByLabIdOrderByCheckedInAtAsc(labId).stream()
                 .map(this::toDto)
                 .toList();
-    }
-
-    private void checkAndSyncOrderCompletion(UUID orderId) {
-        List<FilmRoll> rolls = filmRollRepository.findByOrderId(orderId);
-        if (!rolls.isEmpty() && rolls.stream().allMatch(r ->
-                Set.of("COMPLETED", "BLANK_ROLL_DETECTED", "NEGATIVE_RETURNED").contains(r.getStatus()))) {
-            bookingOrderFacade.updateOrderStatus(orderId, "SCAN_DELIVERED");
-        }
     }
 
     private FilmRollResponse toDto(FilmRoll r) {

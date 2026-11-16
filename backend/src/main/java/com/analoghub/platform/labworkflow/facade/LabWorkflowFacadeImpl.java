@@ -14,6 +14,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -78,6 +79,15 @@ public class LabWorkflowFacadeImpl implements LabWorkflowFacade {
     @Transactional(readOnly = true)
     public List<FilmRollResponse> getRollsByOrderId(UUID orderId) {
         return filmRollRepository.findByOrderId(orderId).stream().map(this::toDto).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean areAllRollsCompletedForOrder(UUID orderId) {
+        List<FilmRoll> rolls = filmRollRepository.findByOrderId(orderId);
+        return !rolls.isEmpty() && rolls.stream().allMatch(r ->
+                Set.of("COMPLETED", "BLANK_ROLL_DETECTED", "NEGATIVE_RETURNED").contains(r.getStatus())
+        );
     }
 
     private FilmRollResponse toDto(FilmRoll r) {

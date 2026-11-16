@@ -49,7 +49,8 @@ public class ArchiveFrame extends BaseAuditEntity {
     @Column(name = "size_bytes", nullable = false)
     private Long sizeBytes = 0L;
 
-    @Column(name = "sha256_checksum", length = 64)
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(name = "sha256_checksum", length = 64, columnDefinition = "bpchar(64)")
     private String sha256Checksum;
 
     @Column(name = "qc_status", nullable = false, length = 32)

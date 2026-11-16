@@ -15,7 +15,6 @@ import com.analoghub.platform.filmlab.facade.FilmLabFacade;
 import com.analoghub.platform.payment.facade.PaymentFacade;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,9 +35,7 @@ public class LabOrderService {
     private final LabOrderItemRepository labOrderItemRepository;
     private final FilmLabFacade filmLabFacade;
     private final ApplicationEventPublisher eventPublisher;
-
-    @Autowired(required = false)
-    private PaymentFacade paymentFacade;
+    private final PaymentFacade paymentFacade;
 
     @Transactional
     public LabOrderResponse createOrder(UUID customerId, CreateLabOrderRequest request) {
@@ -148,7 +145,7 @@ public class LabOrderService {
         List<LabOrderItem> items = labOrderItemRepository.findByOrderId(orderId);
         items.forEach(item -> filmLabFacade.releaseCapacity(order.getLabId(), item.getProcessType(), item.getRollQuantity()));
 
-        if (wasPaid && paymentFacade != null) {
+        if (wasPaid) {
             paymentFacade.refundEscrow(orderId, "LAB_ORDER", reason != null ? reason : "CUSTOMER_CANCEL");
         }
         return mapToResponse(saved, items);
@@ -173,7 +170,7 @@ public class LabOrderService {
         List<LabOrderItem> items = labOrderItemRepository.findByOrderId(orderId);
         items.forEach(item -> filmLabFacade.releaseCapacity(order.getLabId(), item.getProcessType(), item.getRollQuantity()));
 
-        if (wasPaid && paymentFacade != null) {
+        if (wasPaid) {
             paymentFacade.refundEscrow(orderId, "LAB_ORDER", reason != null ? reason : "LAB_REJECT");
         }
         return mapToResponse(saved, items);

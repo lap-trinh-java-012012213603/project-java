@@ -8,7 +8,7 @@ import com.analoghub.platform.notification.facade.NotificationFacade;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,16 +24,15 @@ public class RollSlaMonitorScheduler {
 
     private final FilmRollRepository filmRollRepository;
     private final StompNotificationPublisher stompPublisher;
+    private final ObjectProvider<NotificationFacade> notificationFacadeProvider;
 
-    @Autowired(required = false)
-    private NotificationFacade notificationFacade;
-
-    @Scheduled(fixedDelayString = "300000") // 5 phút
+    @Scheduled(fixedDelayString = "300000")
     @SchedulerLock(name = "RollSlaMonitorScheduler_checkSlaBreaches", lockAtLeastFor = "PT30S", lockAtMostFor = "PT4M")
     @Transactional
     public void monitorRollSlaBreaches() {
         OffsetDateTime now = OffsetDateTime.now();
         List<FilmRoll> breachedRolls = filmRollRepository.findBreachedSlaRolls(now);
+        NotificationFacade notificationFacade = notificationFacadeProvider.getIfAvailable();
 
         for (FilmRoll roll : breachedRolls) {
             roll.setSlaBreachNotified(true);
