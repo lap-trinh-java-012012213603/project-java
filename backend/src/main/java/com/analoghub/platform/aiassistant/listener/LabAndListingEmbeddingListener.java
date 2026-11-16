@@ -109,7 +109,6 @@ public class LabAndListingEmbeddingListener {
     }
 
     @ApplicationModuleListener
-    @Transactional
     public void onFilmLabCreated(FilmLabCreatedEvent event) {
         if (event == null || event.labId() == null) {
             return;
@@ -134,7 +133,6 @@ public class LabAndListingEmbeddingListener {
     }
 
     @ApplicationModuleListener
-    @Transactional
     public void onLabReviewPosted(LabReviewPostedEvent event) {
         if (event == null || event.getLabId() == null) {
             return;
@@ -156,7 +154,6 @@ public class LabAndListingEmbeddingListener {
     }
 
     @ApplicationModuleListener
-    @Transactional
     public void onListingPublished(ListingPublishedEvent event) {
         if (event == null || event.listingId() == null) {
             return;
@@ -173,7 +170,6 @@ public class LabAndListingEmbeddingListener {
     }
 
     @ApplicationModuleListener
-    @Transactional
     public void onListingUpdated(ListingUpdatedEvent event) {
         if (event == null || event.listingId() == null) {
             return;
@@ -194,7 +190,6 @@ public class LabAndListingEmbeddingListener {
     }
 
     @ApplicationModuleListener
-    @Transactional
     public void onListingArchived(ListingArchivedEvent event) {
         if (event == null || event.listingId() == null) {
             return;
@@ -323,10 +318,10 @@ public class LabAndListingEmbeddingListener {
 
         return String.format(
                 "[Lab Profile] Tên: %s | Địa chỉ: %s\n"
-                + "Định dạng film hỗ trợ: %s | Quy trình tráng: %s\n"
-                + "Dòng máy Scan: %s\n"
-                + "Đặc trưng màu sắc: %s\n"
-                + "Thời gian trả ảnh trung bình: %d giờ | Đơn giá từ: %s VND.",
+                        + "Định dạng film hỗ trợ: %s | Quy trình tráng: %s\n"
+                        + "Dòng máy Scan: %s\n"
+                        + "Đặc trưng màu sắc: %s\n"
+                        + "Thời gian trả ảnh trung bình: %d giờ | Đơn giá từ: %s VND.",
                 name, address, formats, processes, scanners, bio, turnaround, minPrice.toPlainString()
         );
     }
