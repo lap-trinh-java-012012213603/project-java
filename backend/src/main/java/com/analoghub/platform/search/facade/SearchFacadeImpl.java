@@ -88,5 +88,37 @@ public class SearchFacadeImpl implements SearchFacade {
                 .build();
         return listingSearchService.searchListings(criteria);
     }
+
+    @Override
+    public LabSearchResponse searchLabsLexical(String query, String provinceCode, Double lat, Double lon, int limit) {
+        int safeSize = Math.max(1, Math.min(50, limit));
+        boolean hasGeo = lat != null && lon != null;
+        LabSearchCriteria criteria = LabSearchCriteria.builder()
+                .q(query)
+                .provinceCode(provinceCode)
+                .lat(lat)
+                .lon(lon)
+                .radiusKm(hasGeo ? 25.0 : null)
+                .sortBy(hasGeo ? LabSortBy.DISTANCE : LabSortBy.RATING)
+                .onlyAccepting(true)
+                .page(0)
+                .size(safeSize)
+                .build();
+        return labSearchService.searchLabs(criteria);
+    }
+
+    @Override
+    public ListingSearchResponse searchListingsLexical(String query, String provinceCode, String category, int limit) {
+        int safeSize = Math.max(1, Math.min(50, limit));
+        ListingSearchCriteria criteria = ListingSearchCriteria.builder()
+                .q(query)
+                .provinceCode(provinceCode)
+                .category(category)
+                .sortBy(query != null && !query.isBlank() ? ListingSortBy.RELEVANCE : ListingSortBy.NEWEST)
+                .page(0)
+                .size(safeSize)
+                .build();
+        return listingSearchService.searchListings(criteria);
+    }
 }
 

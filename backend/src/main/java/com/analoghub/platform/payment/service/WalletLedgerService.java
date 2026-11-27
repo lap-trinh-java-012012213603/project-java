@@ -12,6 +12,7 @@ import com.analoghub.platform.payment.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -762,6 +763,19 @@ public class WalletLedgerService {
                 toTime,
                 pageable
         );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<WalletLedgerEntry> searchLedgerBySpecification(
+            Specification<WalletLedgerEntry> spec,
+            Pageable pageable
+    ) {
+        return walletLedgerEntryRepository.findAll(spec, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public List<WalletLedgerEntry> findAllLedgerEntries() {
+        return walletLedgerEntryRepository.findAll();
     }
 
     private static BigDecimal normalizePositiveAmount(BigDecimal amount) {

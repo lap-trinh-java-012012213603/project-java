@@ -9,6 +9,8 @@ import com.analoghub.platform.delivery.dto.ContactAddressDto;
 import com.analoghub.platform.delivery.dto.CreateDeliveryTaskRequest;
 import com.analoghub.platform.delivery.dto.ShippingFeeEstimateDto;
 import com.analoghub.platform.delivery.dto.ShippingFeeEstimateRequest;
+import com.analoghub.platform.delivery.event.DeliveryFailedEvent;
+import com.analoghub.platform.delivery.event.MarketParcelDeliveredEvent;
 import com.analoghub.platform.delivery.facade.DeliveryFacade;
 import com.analoghub.platform.iam.dto.UserAddressDto;
 import com.analoghub.platform.iam.dto.UserSummaryDto;
@@ -85,6 +87,7 @@ public class MarketplaceOrderService {
     private static final double DEFAULT_LAT = 10.7769;
     private static final double DEFAULT_LON = 106.7009;
     private static final String SHIP_META_KEY_PREFIX = "mkt:order:shipmeta:";
+    private static final long INSPECTION_WINDOW_HOURS = 72L;
 
     private final MarketplaceListingRepository listingRepository;
     private final MarketplaceListingImageRepository listingImageRepository;
@@ -295,6 +298,65 @@ public class MarketplaceOrderService {
                 "Người mua đã hoàn tất thanh toán vào tài khoản tạm giữ Escrow cho đơn hàng "
                         + order.getOrderCode() + ". Người bán vui lòng đóng gói và bàn giao vận chuyển."
         );
+    }
+
+    @Transactional
+    public void handleParcelDelivered(MarketParcelDeliveredEvent event) {
+        if (event == null || event.marketOrderId() == null) {
+            return;
+        }
+
+        Optional<MarketplaceOrder> orderOpt = orderRepository.findById(event.marketOrderId());
+        if (orderOpt.isEmpty()) {
+            return;
+        }
+
+        MarketplaceOrder order = orderOpt.get();
+        if (order.getStatus() != MarketOrderStatus.SHIPPED
+                && order.getStatus() != MarketOrderStatus.ESCROW_HELD_AWAITING_SHIP) {
+            return;
+        }
+
+        Instant deliveredAt = event.deliveredAt() != null ? event.deliveredAt() : Instant.now();
+        Instant inspectionDeadline = deliveredAt.plus(INSPECTION_WINDOW_HOURS, ChronoUnit.HOURS);
+
+        order.setStatus(MarketOrderStatus.DELIVERED_INSPECTING);
+        order.setInspectionDeadlineAt(inspectionDeadline);
+        orderRepository.saveAndFlush(order);
+
+        UUID conversationId = messagingFacade.getOrCreateConversation(
+                "MARKET_ORDER",
+                order.getId(),
+                List.of(order.getBuyerUserId(), order.getSellerUserId())
+        );
+        messagingFacade.sendSystemNotice(
+                conversationId,
+                "Đơn vị vận chuyển đã giao kiện hàng thành công cho đơn " + order.getOrderCode()
+                        + ". Đồng hồ 72h kiểm tra thiết bị đã bắt đầu đếm ngược (hạn chót: " + inspectionDeadline + ")."
+        );
+    }
+
+    @Transactional
+    public void handleDeliveryFailed(DeliveryFailedEvent event) {
+        if (event == null || event.referenceId() == null || event.referenceType() == null) {
+            return;
+        }
+        if (!"MARKETPLACE_ORDER".equalsIgnoreCase(event.referenceType().trim())) {
+            return;
+        }
+
+        orderRepository.findById(event.referenceId()).ifPresent(order -> {
+            UUID conversationId = messagingFacade.getOrCreateConversation(
+                    "MARKET_ORDER",
+                    order.getId(),
+                    List.of(order.getBuyerUserId(), order.getSellerUserId())
+            );
+            messagingFacade.sendSystemNotice(
+                    conversationId,
+                    "Cảnh báo vận chuyển đơn hàng " + order.getOrderCode() + ": "
+                            + (event.failureReason() != null ? event.failureReason() : "Giao nhận thất bại")
+            );
+        });
     }
 
     @Transactional(readOnly = true)

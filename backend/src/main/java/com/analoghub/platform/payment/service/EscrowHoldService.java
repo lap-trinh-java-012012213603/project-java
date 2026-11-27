@@ -8,6 +8,7 @@ import com.analoghub.platform.payment.domain.RefundRequest;
 import com.analoghub.platform.payment.domain.RefundRequestStatus;
 import com.analoghub.platform.payment.domain.WalletType;
 import com.analoghub.platform.payment.dto.EscrowHoldRequest;
+import com.analoghub.platform.payment.dto.EscrowSnapshotDto;
 import com.analoghub.platform.payment.event.BlankRollRefundProcessedEvent;
 import com.analoghub.platform.payment.event.EscrowReleasedEvent;
 import com.analoghub.platform.payment.event.RefundProcessedEvent;
@@ -418,6 +419,38 @@ public class EscrowHoldService {
             }
         }
         return releasedCount;
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<EscrowSnapshotDto> getEscrowSnapshot(UUID referenceId, String referenceType) {
+        if (referenceId == null) {
+            return Optional.empty();
+        }
+        Optional<EscrowHold> holdOpt = Optional.empty();
+        if (referenceType != null && !referenceType.isBlank()) {
+            holdOpt = escrowHoldRepository.findByReferenceTypeAndReferenceId(
+                    normalizeReferenceType(referenceType),
+                    referenceId
+            );
+        }
+        if (holdOpt.isEmpty()) {
+            holdOpt = escrowHoldRepository.findByReferenceId(referenceId);
+        }
+        return holdOpt.map(hold -> new EscrowSnapshotDto(
+                hold.getId(),
+                hold.getReferenceType(),
+                hold.getReferenceId(),
+                hold.getPayerUserId(),
+                hold.getPayeeUserId(),
+                hold.getStatus() != null ? hold.getStatus().name() : null,
+                hold.getGrossAmountVnd(),
+                hold.getRefundedAmountVnd(),
+                hold.getRemainingAmountVnd(),
+                hold.getCommissionFeeVnd(),
+                hold.getNetPayoutAmountVnd(),
+                hold.getStatus() != null && hold.getStatus().isTerminal(),
+                hold.getSettledAt()
+        ));
     }
 
     private EscrowHold findEscrowForUpdate(String referenceType, UUID referenceId) {
