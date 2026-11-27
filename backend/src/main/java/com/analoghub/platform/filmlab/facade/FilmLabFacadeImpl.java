@@ -6,10 +6,12 @@ import com.analoghub.platform.common.exception.ResourceNotFoundException;
 import com.analoghub.platform.filmlab.domain.Lab;
 import com.analoghub.platform.filmlab.domain.LabCapacityRule;
 import com.analoghub.platform.filmlab.domain.LabMember;
+import com.analoghub.platform.filmlab.domain.LabReview;
 import com.analoghub.platform.filmlab.event.FilmLabCreatedEvent;
 import com.analoghub.platform.filmlab.repository.LabCapacityRuleRepository;
 import com.analoghub.platform.filmlab.repository.LabMemberRepository;
 import com.analoghub.platform.filmlab.repository.LabRepository;
+import com.analoghub.platform.filmlab.repository.LabReviewRepository;
 import com.analoghub.platform.filmlab.repository.ServicePackageRepository;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.Normalizer;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -43,12 +46,23 @@ public class FilmLabFacadeImpl implements FilmLabFacade {
     private final @Nullable LabRepository labRepository;
     private final @Nullable LabMemberRepository labMemberRepository;
     private final @Nullable ApplicationEventPublisher eventPublisher;
+    private final @Nullable LabReviewRepository labReviewRepository;
 
     public FilmLabFacadeImpl(
             LabCapacityRuleRepository capacityRuleRepository,
             ServicePackageRepository servicePackageRepository
     ) {
-        this(capacityRuleRepository, servicePackageRepository, null, null, null);
+        this(capacityRuleRepository, servicePackageRepository, null, null, null, null);
+    }
+
+    public FilmLabFacadeImpl(
+            LabCapacityRuleRepository capacityRuleRepository,
+            ServicePackageRepository servicePackageRepository,
+            @Nullable LabRepository labRepository,
+            @Nullable LabMemberRepository labMemberRepository,
+            @Nullable ApplicationEventPublisher eventPublisher
+    ) {
+        this(capacityRuleRepository, servicePackageRepository, labRepository, labMemberRepository, eventPublisher, null);
     }
 
     @Autowired
@@ -57,13 +71,15 @@ public class FilmLabFacadeImpl implements FilmLabFacade {
             ServicePackageRepository servicePackageRepository,
             @Nullable LabRepository labRepository,
             @Nullable LabMemberRepository labMemberRepository,
-            @Nullable ApplicationEventPublisher eventPublisher
+            @Nullable ApplicationEventPublisher eventPublisher,
+            @Nullable LabReviewRepository labReviewRepository
     ) {
         this.capacityRuleRepository = capacityRuleRepository;
         this.servicePackageRepository = servicePackageRepository;
         this.labRepository = labRepository;
         this.labMemberRepository = labMemberRepository;
         this.eventPublisher = eventPublisher;
+        this.labReviewRepository = labReviewRepository;
     }
 
     @Override
@@ -273,6 +289,65 @@ public class FilmLabFacadeImpl implements FilmLabFacade {
         return labRepository.findById(labId)
                 .filter(lab -> !lab.isDeleted())
                 .map(FilmLabFacadeImpl::toProvisionedLabInfo);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<LabReviewModerationInfo> findReviewById(UUID reviewId) {
+        if (reviewId == null || labReviewRepository == null) {
+            return Optional.empty();
+        }
+        return labReviewRepository.findById(reviewId)
+                .map(FilmLabFacadeImpl::toReviewModerationInfo);
+    }
+
+    @Override
+    @Transactional
+    public Optional<LabReviewModerationInfo> hideReviewByAdmin(UUID reviewId) {
+        if (reviewId == null) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "reviewId không được để trống");
+        }
+        if (labReviewRepository == null) {
+            throw new IllegalStateException("LabReviewRepository is required for review moderation operations");
+        }
+        LabReview review = labReviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResourceNotFoundException("Đánh giá Film Lab", reviewId));
+
+        review.setModerationStatus("HIDDEN");
+        LabReview savedReview = labReviewRepository.save(review);
+
+        if (labRepository != null) {
+            labRepository.findById(savedReview.getLabId()).ifPresent(lab -> {
+                List<LabReview> publishedReviews = labReviewRepository.findByLabIdAndModerationStatus(
+                        savedReview.getLabId(),
+                        "PUBLISHED"
+                );
+                int reviewCount = publishedReviews.size();
+                BigDecimal avgRating = reviewCount == 0
+                        ? BigDecimal.ZERO
+                        : BigDecimal.valueOf(publishedReviews.stream()
+                                .mapToInt(LabReview::getRating)
+                                .average()
+                                .orElse(0.0))
+                                .setScale(2, RoundingMode.HALF_UP);
+                lab.setReviewCount(reviewCount);
+                lab.setAvgRating(avgRating);
+                labRepository.save(lab);
+            });
+        }
+
+        return Optional.of(toReviewModerationInfo(savedReview));
+    }
+
+    private static LabReviewModerationInfo toReviewModerationInfo(LabReview review) {
+        return new LabReviewModerationInfo(
+                review.getId(),
+                review.getLabId(),
+                review.getCustomerId(),
+                review.getRating(),
+                review.getComment(),
+                review.getModerationStatus()
+        );
     }
 
     private LabRepository requireLabRepository() {

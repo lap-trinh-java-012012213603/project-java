@@ -25,6 +25,15 @@ public interface FilmLabFacade {
             String status
     ) {}
 
+    record LabReviewModerationInfo(
+            UUID reviewId,
+            UUID labId,
+            UUID authorUserId,
+            short rating,
+            String comment,
+            String moderationStatus
+    ) {}
+
     ServicePackageInfo getServicePackageInfo(UUID packageId);
 
     ProvisionedLabInfo provisionLabFromApprovedApplication(UUID ownerUserId, Map<String, Object> portfolioPayload);
@@ -34,6 +43,14 @@ public interface FilmLabFacade {
     List<ProvisionedLabInfo> getLabsByStatus(String status);
 
     default Optional<ProvisionedLabInfo> findLabById(UUID labId) {
+        return Optional.empty();
+    }
+
+    default Optional<LabReviewModerationInfo> findReviewById(UUID reviewId) {
+        return Optional.empty();
+    }
+
+    default Optional<LabReviewModerationInfo> hideReviewByAdmin(UUID reviewId) {
         return Optional.empty();
     }
 }

@@ -5,12 +5,14 @@ import com.analoghub.platform.common.exception.ErrorCode;
 import com.analoghub.platform.filmlab.domain.Lab;
 import com.analoghub.platform.filmlab.domain.LabCapacityRule;
 import com.analoghub.platform.filmlab.domain.LabMember;
+import com.analoghub.platform.filmlab.domain.LabReview;
 import com.analoghub.platform.filmlab.event.FilmLabCreatedEvent;
 import com.analoghub.platform.filmlab.facade.FilmLabFacade;
 import com.analoghub.platform.filmlab.facade.FilmLabFacadeImpl;
 import com.analoghub.platform.filmlab.repository.LabCapacityRuleRepository;
 import com.analoghub.platform.filmlab.repository.LabMemberRepository;
 import com.analoghub.platform.filmlab.repository.LabRepository;
+import com.analoghub.platform.filmlab.repository.LabReviewRepository;
 import com.analoghub.platform.filmlab.repository.ServicePackageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,6 +55,9 @@ class FilmLabProvisioningFacadeTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private LabReviewRepository labReviewRepository;
+
     private FilmLabFacadeImpl filmLabFacade;
 
     @BeforeEach
@@ -61,7 +67,8 @@ class FilmLabProvisioningFacadeTest {
                 servicePackageRepository,
                 labRepository,
                 labMemberRepository,
-                eventPublisher
+                eventPublisher,
+                labReviewRepository
         );
     }
 
@@ -282,5 +289,64 @@ class FilmLabProvisioningFacadeTest {
         assertThat(results).hasSize(1);
         assertThat(results.getFirst().labId()).isEqualTo(labId);
         assertThat(results.getFirst().status()).isEqualTo("PENDING_APPROVAL");
+    }
+
+    @Test
+    @DisplayName("hideReviewByAdmin sets moderationStatus HIDDEN and recalculates Lab avgRating and reviewCount")
+    void shouldHideReviewByAdminAndRecalculateLabRating() {
+        UUID labId = UUID.randomUUID();
+        UUID reviewId = UUID.randomUUID();
+        UUID authorId = UUID.randomUUID();
+        LabReview targetReview = LabReview.builder()
+                .id(reviewId)
+                .labId(labId)
+                .customerId(authorId)
+                .orderId(UUID.randomUUID())
+                .rating((short) 1)
+                .comment("Spam toxic review")
+                .moderationStatus("PUBLISHED")
+                .build();
+        LabReview remainingReview1 = LabReview.builder()
+                .id(UUID.randomUUID())
+                .labId(labId)
+                .customerId(UUID.randomUUID())
+                .orderId(UUID.randomUUID())
+                .rating((short) 5)
+                .moderationStatus("PUBLISHED")
+                .build();
+        LabReview remainingReview2 = LabReview.builder()
+                .id(UUID.randomUUID())
+                .labId(labId)
+                .customerId(UUID.randomUUID())
+                .orderId(UUID.randomUUID())
+                .rating((short) 4)
+                .moderationStatus("PUBLISHED")
+                .build();
+        Lab lab = Lab.builder()
+                .id(labId)
+                .ownerUserId(UUID.randomUUID())
+                .slug("saigon-lab")
+                .name("Saigon Lab")
+                .fullAddress("123 Nguyen Hue")
+                .districtCode("760")
+                .provinceCode("79")
+                .avgRating(new BigDecimal("3.33"))
+                .reviewCount(3)
+                .build();
+
+        when(labReviewRepository.findById(reviewId)).thenReturn(Optional.of(targetReview));
+        when(labReviewRepository.save(any(LabReview.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(labRepository.findById(labId)).thenReturn(Optional.of(lab));
+        when(labReviewRepository.findByLabIdAndModerationStatus(labId, "PUBLISHED"))
+                .thenReturn(List.of(remainingReview1, remainingReview2));
+        when(labRepository.save(any(Lab.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Optional<FilmLabFacade.LabReviewModerationInfo> result = filmLabFacade.hideReviewByAdmin(reviewId);
+
+        assertThat(result).isPresent();
+        assertThat(result.get().moderationStatus()).isEqualTo("HIDDEN");
+        assertThat(result.get().authorUserId()).isEqualTo(authorId);
+        assertThat(lab.getReviewCount()).isEqualTo(2);
+        assertThat(lab.getAvgRating()).isEqualByComparingTo("4.50");
     }
 }

@@ -12,6 +12,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Immutable;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -20,6 +21,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Entity
+@Immutable
 @Table(name = "adm_audit_logs")
 @Getter
 @Setter
