@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,4 +18,8 @@ public interface LabRepository extends JpaRepository<Lab, UUID> {
 
     @Query("SELECT l FROM Lab l WHERE l.id = :id AND l.status = 'ACTIVE'")
     Optional<Lab> findByIdAndActiveTrue(@Param("id") UUID id);
+
+    Optional<Lab> findFirstByOwnerUserIdOrderByCreatedAtDesc(UUID ownerUserId);
+
+    List<Lab> findByStatusAndDeletedAtIsNullOrderByCreatedAtDesc(String status);
 }

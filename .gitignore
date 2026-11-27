@@ -92,6 +92,7 @@ Thumbs.db
 Desktop.ini
 
 # ===================================================================
-# 7. LOCAL ARCHITECTURE DOCS
+# 7. LOCAL ARCHITECTURE DOCS & KNOWLEDGE GRAPH
 # ===================================================================
 analoghub-architecture-docs/
+graphify-out/
