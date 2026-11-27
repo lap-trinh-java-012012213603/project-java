@@ -1,12 +1,14 @@
 package com.analoghub.platform.payment.facade;
 
 import com.analoghub.platform.payment.dto.EscrowHoldRequest;
+import com.analoghub.platform.payment.dto.EscrowSnapshotDto;
 import com.analoghub.platform.payment.service.EscrowHoldService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -64,5 +66,11 @@ public class PaymentFacadeImpl implements PaymentFacade {
             BigDecimal releaseToSellerVnd
     ) {
         escrowHoldService.resolveDisputeSplit(referenceId, referenceType, refundToBuyerVnd, releaseToSellerVnd);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<EscrowSnapshotDto> getEscrowSnapshot(UUID referenceId, String referenceType) {
+        return escrowHoldService.getEscrowSnapshot(referenceId, referenceType);
     }
 }

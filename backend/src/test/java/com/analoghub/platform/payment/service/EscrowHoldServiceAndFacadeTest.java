@@ -10,6 +10,7 @@ import com.analoghub.platform.payment.domain.Wallet;
 import com.analoghub.platform.payment.domain.WalletLedgerEntry;
 import com.analoghub.platform.payment.domain.WalletType;
 import com.analoghub.platform.payment.dto.EscrowHoldRequest;
+import com.analoghub.platform.payment.dto.EscrowSnapshotDto;
 import com.analoghub.platform.payment.event.BlankRollRefundProcessedEvent;
 import com.analoghub.platform.payment.event.EscrowReleasedEvent;
 import com.analoghub.platform.payment.event.RefundProcessedEvent;
@@ -424,5 +425,56 @@ class EscrowHoldServiceAndFacadeTest {
         assertThat(sellerWallet.getAvailableBalanceVnd()).isEqualByComparingTo("285000.00");
         assertThat(systemRevenueWallet.getAvailableBalanceVnd()).isEqualByComparingTo("15000.00");
         assertThat(systemEscrowWallet.getAvailableBalanceVnd()).isEqualByComparingTo("500000.00");
+    }
+
+    @Test
+    @DisplayName("getEscrowSnapshot and resolveDisputeSplit with 0 buyer refund settles FROZEN_BY_DISPUTE LAB_ORDER to LAB_WALLET as RELEASED_TO_PAYEE")
+    void shouldSnapshotAndReleaseFrozenLabOrderEscrowToLabWallet() {
+        UUID labOrderId = UUID.randomUUID();
+        UUID customerId = UUID.randomUUID();
+        UUID labOwnerId = UUID.randomUUID();
+        UUID disputeId = UUID.randomUUID();
+
+        Wallet labWallet = createStoredWallet(
+                UUID.fromString("00000000-0000-7000-8000-000000000060"),
+                labOwnerId,
+                WalletType.LAB_WALLET,
+                new BigDecimal("0.00")
+        );
+
+        paymentFacade.hold(new EscrowHoldRequest(
+                UUID.randomUUID(),
+                "LAB_ORDER",
+                labOrderId,
+                customerId,
+                labOwnerId,
+                new BigDecimal("280000.00")
+        ));
+        paymentFacade.freezeForDispute(labOrderId, "LAB_ORDER", disputeId);
+
+        EscrowSnapshotDto frozenSnapshot = paymentFacade.getEscrowSnapshot(labOrderId, "LAB_ORDER").orElseThrow();
+        assertThat(frozenSnapshot.status()).isEqualTo("FROZEN_BY_DISPUTE");
+        assertThat(frozenSnapshot.remainingAmountVnd()).isEqualByComparingTo("280000.00");
+        assertThat(frozenSnapshot.terminal()).isFalse();
+
+        when(platformConfigFacade.calculateCommissionFee(eq(FeeScope.LAB_ORDER), eq(new BigDecimal("280000.00"))))
+                .thenReturn(new BigDecimal("28000.00"));
+
+        paymentFacade.resolveDisputeSplit(
+                labOrderId,
+                "LAB_ORDER",
+                new BigDecimal("0.00"),
+                new BigDecimal("280000.00")
+        );
+
+        EscrowSnapshotDto settledSnapshot = paymentFacade.getEscrowSnapshot(labOrderId, "LAB_ORDER").orElseThrow();
+        assertThat(settledSnapshot.status()).isEqualTo("RELEASED_TO_PAYEE");
+        assertThat(settledSnapshot.commissionFeeVnd()).isEqualByComparingTo("28000.00");
+        assertThat(settledSnapshot.netPayoutAmountVnd()).isEqualByComparingTo("252000.00");
+        assertThat(settledSnapshot.terminal()).isTrue();
+
+        assertThat(labWallet.getWalletType()).isEqualTo(WalletType.LAB_WALLET);
+        assertThat(labWallet.getAvailableBalanceVnd()).isEqualByComparingTo("252000.00");
+        assertThat(systemRevenueWallet.getAvailableBalanceVnd()).isEqualByComparingTo("28000.00");
     }
 }

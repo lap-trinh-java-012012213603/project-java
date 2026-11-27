@@ -1,7 +1,9 @@
 package com.analoghub.platform.payment.facade;
 
 import com.analoghub.platform.payment.dto.EscrowHoldRequest;
+import com.analoghub.platform.payment.dto.EscrowSnapshotDto;
 import java.math.BigDecimal;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface PaymentFacade {
@@ -17,6 +19,10 @@ public interface PaymentFacade {
     void freezeForDispute(UUID referenceId, String referenceType, UUID disputeId);
 
     void resolveDisputeSplit(UUID referenceId, String referenceType, BigDecimal refundToBuyerVnd, BigDecimal releaseToSellerVnd);
+
+    default Optional<EscrowSnapshotDto> getEscrowSnapshot(UUID referenceId, String referenceType) {
+        return Optional.empty();
+    }
 
     default void releaseEscrow(UUID referenceId, String referenceType) {
         release(referenceId, referenceType);
